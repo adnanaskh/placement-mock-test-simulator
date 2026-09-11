@@ -108,6 +108,16 @@
 
     /* Print styling */
     @media print {
+      @page {
+        margin: 12mm;
+        size: auto;
+      }
+
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+
       body * {
         visibility: hidden;
       }
@@ -117,17 +127,26 @@
         visibility: visible;
       }
 
-      #printable-report {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: #ffffff !important;
-        color: #000000 !important;
+      .no-print,
+      .no-print * {
+        display: none !important;
+        visibility: hidden !important;
       }
 
-      .no-print {
-        display: none !important;
+      #printable-report {
+        position: static !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+      }
+
+      #printable-report main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
     }
 
@@ -712,10 +731,13 @@
           <!-- Top Bar -->
           <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded bg-blue-700 flex items-center justify-center text-white font-bold text-sm">
+              <div class="w-8 h-8 rounded bg-blue-700 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                 AP
               </div>
-              <h1 class="font-bold text-base text-slate-900">Assessment Portal</h1>
+              <div>
+                <h1 class="font-bold text-base text-slate-900 leading-tight">Assessment Portal</h1>
+                <p class="text-[11px] text-slate-500">Corporate Mock Test Simulator</p>
+              </div>
             </div>
 
             <!-- Header Actions -->
@@ -749,105 +771,193 @@
             </div>
           </header>
 
-          <!-- Main Selection Area -->
-          <main class="max-w-5xl mx-auto w-full p-6 my-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Main Content Area -->
+          <main class="max-w-5xl mx-auto w-full p-6 space-y-6">
             
-            <!-- Left Side: Pattern Selection & Upload -->
-            <div class="lg:col-span-7 space-y-4">
+            <!-- Grid: Pattern Selection & Candidate Form -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
-              <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-3">
-                <h2 class="font-bold text-xs text-slate-600 uppercase tracking-wider">Select Assessment Pattern</h2>
+              <!-- Left Side: Pattern Selection & Upload -->
+              <div class="lg:col-span-7 space-y-4">
                 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <button onclick="loadPreset('tcs'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'tcs' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
-                    <span class="font-bold text-xs text-slate-900">TCS iON Pattern</span>
-                    <span class="text-[11px] text-slate-500">${tcsCount} Questions • 75 Mins</span>
-                  </button>
-
-                  <button onclick="loadPreset('infosys'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'infosys' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
-                    <span class="font-bold text-xs text-slate-900">Infosys Pattern</span>
-                    <span class="text-[11px] text-slate-500">${infCount} Questions • 100 Mins</span>
-                  </button>
-
-                  <button onclick="loadPreset('cognizant'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'cognizant' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
-                    <span class="font-bold text-xs text-slate-900">Cognizant Pattern</span>
-                    <span class="text-[11px] text-slate-500">${cogCount} Questions • 85 Mins</span>
-                  </button>
-                </div>
-
-                <!-- Custom Upload Box with Active State -->
-                <div class="pt-2">
-                  <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Custom Test Upload</span>
+                <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-3">
+                  <h2 class="font-bold text-xs text-slate-600 uppercase tracking-wider">Select Assessment Pattern</h2>
                   
-                  ${STATE.uploadedFileName ? `
-                    <div class="bg-emerald-50 border border-emerald-300 rounded p-3 flex items-center justify-between">
-                      <div class="flex items-center gap-2">
-                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-700"></i>
-                        <div>
-                          <div class="text-xs font-bold text-emerald-900 truncate max-w-xs">${STATE.uploadedFileName}</div>
-                          <div class="text-[10px] text-emerald-700">File uploaded and loaded. Cache reset.</div>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <button onclick="loadPreset('tcs'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'tcs' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                      <span class="font-bold text-xs text-slate-900">TCS iON Pattern</span>
+                      <span class="text-[11px] text-slate-500">${tcsCount} Questions • 75 Mins</span>
+                    </button>
+
+                    <button onclick="loadPreset('infosys'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'infosys' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                      <span class="font-bold text-xs text-slate-900">Infosys Pattern</span>
+                      <span class="text-[11px] text-slate-500">${infCount} Questions • 100 Mins</span>
+                    </button>
+
+                    <button onclick="loadPreset('cognizant'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'cognizant' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                      <span class="font-bold text-xs text-slate-900">Cognizant Pattern</span>
+                      <span class="text-[11px] text-slate-500">${cogCount} Questions • 85 Mins</span>
+                    </button>
+                  </div>
+
+                  <!-- Custom Upload Box with Active State -->
+                  <div class="pt-2">
+                    <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Upload Custom Assessment JSON</span>
+                    
+                    ${STATE.uploadedFileName ? `
+                      <div class="bg-emerald-50 border border-emerald-300 rounded p-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-700"></i>
+                          <div>
+                            <div class="text-xs font-bold text-emerald-900 truncate max-w-xs">${STATE.uploadedFileName}</div>
+                            <div class="text-[10px] text-emerald-700">Custom test loaded successfully.</div>
+                          </div>
+                        </div>
+                        <button onclick="removeUploadedFile()" class="text-xs text-red-700 hover:text-red-900 bg-white border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded font-medium transition flex items-center gap-1">
+                          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove
+                        </button>
+                      </div>
+                    ` : `
+                      <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded p-3.5 text-center cursor-pointer transition" onclick="document.getElementById('json-file-input').click()">
+                        <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="if(this.files[0]) handleCustomJsonUpload(this.files[0])" />
+                        <div class="flex items-center justify-center gap-2 text-xs font-medium text-slate-700">
+                          <i data-lucide="upload" class="w-4 h-4 text-blue-700"></i>
+                          <span>Click or Drag to Upload Custom .json File</span>
                         </div>
                       </div>
-                      <button onclick="removeUploadedFile()" class="text-xs text-red-700 hover:text-red-900 bg-white border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded font-medium transition flex items-center gap-1">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove
-                      </button>
-                    </div>
-                  ` : `
-                    <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded p-3.5 text-center cursor-pointer transition" onclick="document.getElementById('json-file-input').click()">
-                      <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="if(this.files[0]) handleCustomJsonUpload(this.files[0])" />
-                      <div class="flex items-center justify-center gap-2 text-xs font-medium text-slate-700">
-                        <i data-lucide="upload" class="w-4 h-4 text-blue-700"></i>
-                        <span>Upload Custom JSON File</span>
-                      </div>
-                    </div>
-                  `}
+                    `}
+                  </div>
+
                 </div>
+
+              </div>
+
+              <!-- Right Side: Candidate Registration & Details -->
+              <div class="lg:col-span-5 bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+                
+                <div class="flex items-center justify-between pb-2.5 border-b border-slate-200">
+                  <h3 class="font-bold text-xs uppercase tracking-wider text-slate-600">Candidate Information</h3>
+                  <span class="text-xs px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">${data.company}</span>
+                </div>
+
+                <!-- Candidate Info Inputs -->
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Candidate Full Name *</label>
+                    <input type="text" value="${STATE.candidate.name}" oninput="STATE.candidate.name = this.value; saveSessionToStorage();" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-600" placeholder="Enter your full name" />
+                  </div>
+
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Registration / Roll ID *</label>
+                    <input type="text" value="${STATE.candidate.regNo}" oninput="STATE.candidate.regNo = this.value; saveSessionToStorage();" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600" placeholder="Enter registration ID" />
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-200 space-y-2 text-xs text-slate-600">
+                  <div class="flex justify-between">
+                    <span>Questions:</span>
+                    <span class="font-bold text-slate-900">${totalQ}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Duration:</span>
+                    <span class="font-bold text-slate-900">${data.totalTimeMinutes} Minutes</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>Passing Cutoff:</span>
+                    <span class="font-bold text-slate-900">70%</span>
+                  </div>
+                </div>
+
+                <button onclick="validateAndProceedToInstructions()" class="w-full py-2.5 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition">
+                  <span>Proceed to Instructions</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
 
               </div>
 
             </div>
 
-            <!-- Right Side: Candidate Registration & Details -->
-            <div class="lg:col-span-5 bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
-              
-              <div class="flex items-center justify-between pb-2.5 border-b border-slate-200">
-                <h3 class="font-bold text-xs uppercase tracking-wider text-slate-600">Candidate Information</h3>
-                <span class="text-xs px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">${data.company}</span>
+            <!-- How To Use / AI Exam Generator Guide Card -->
+            <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                  </div>
+                  <h2 class="font-bold text-xs text-slate-900 uppercase tracking-wider">How to Use & Generate Custom Tests with AI</h2>
+                </div>
+                <button onclick="openModal('AI_PROMPT')" class="text-xs text-blue-700 hover:text-blue-900 font-semibold flex items-center gap-1">
+                  <span>Open Master AI Prompt</span>
+                  <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                </button>
               </div>
 
-              <!-- Candidate Info Inputs (Blank by default) -->
-              <div class="space-y-3">
-                <div>
-                  <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Candidate Full Name *</label>
-                  <input type="text" value="${STATE.candidate.name}" oninput="STATE.candidate.name = this.value; saveSessionToStorage();" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-600" placeholder="Enter your full name" />
+              <!-- 4 Step Guide -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                
+                <!-- Step 1 -->
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                    <h3 class="font-bold text-xs text-slate-900">Download Preset</h3>
+                  </div>
+                  <p class="text-[11px] text-slate-600 leading-relaxed">
+                    Click <strong>"Download Demo JSON"</strong> in the top header to get the authentic pattern structure (TCS, Infosys, or Cognizant).
+                  </p>
                 </div>
 
-                <div>
-                  <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Registration / Roll ID *</label>
-                  <input type="text" value="${STATE.candidate.regNo}" oninput="STATE.candidate.regNo = this.value; saveSessionToStorage();" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600" placeholder="Enter registration ID" />
+                <!-- Step 2 -->
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">2</span>
+                    <h3 class="font-bold text-xs text-slate-900">Copy AI Prompt</h3>
+                  </div>
+                  <p class="text-[11px] text-slate-600 leading-relaxed">
+                    Click <strong>"AI Generator Prompt"</strong> to copy the master system instructions that enforce strict schema and question ID preservation.
+                  </p>
                 </div>
+
+                <!-- Step 3 -->
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">3</span>
+                    <h3 class="font-bold text-xs text-slate-900">Ask AI & Save</h3>
+                  </div>
+                  <p class="text-[11px] text-slate-600 leading-relaxed">
+                    Paste the prompt + JSON into <strong>ChatGPT, Claude, or Gemini</strong>. Request your desired questions. Save AI's response as a <code class="bg-slate-200 px-1 py-0.5 rounded text-[10px]">.json</code> file.
+                  </p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-blue-700 text-white flex items-center justify-center text-xs font-bold shrink-0">4</span>
+                    <h3 class="font-bold text-xs text-slate-900">Upload & Test</h3>
+                  </div>
+                  <p class="text-[11px] text-slate-600 leading-relaxed">
+                    Upload your saved JSON in <strong>"Custom Assessment Upload"</strong>, enter your Name and Roll ID, and click <strong>"Proceed to Instructions"</strong> to begin!
+                  </p>
+                </div>
+
               </div>
 
-              <div class="pt-2 border-t border-slate-200 space-y-2 text-xs text-slate-600">
-                <div class="flex justify-between">
-                  <span>Questions:</span>
-                  <span class="font-bold text-slate-900">${totalQ}</span>
+              <!-- Quick Action Bar -->
+              <div class="bg-blue-50 border border-blue-200 rounded p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2 text-blue-900">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-blue-700"></i>
+                  <span>Ready to create a custom practice test? Grab the prompt and get started in seconds.</span>
                 </div>
-                <div class="flex justify-between">
-                  <span>Duration:</span>
-                  <span class="font-bold text-slate-900">${data.totalTimeMinutes} Minutes</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Passing Cutoff:</span>
-                  <span class="font-bold text-slate-900">70%</span>
+                <div class="flex items-center gap-2">
+                  <button onclick="openModal('AI_PROMPT')" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-3 py-1.5 rounded transition shadow-sm flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy AI Prompt</span>
+                  </button>
+                  <button onclick="downloadCompanyPresetJson('tcs')" class="bg-white hover:bg-slate-50 border border-blue-300 text-blue-800 font-semibold px-3 py-1.5 rounded transition shadow-sm flex items-center gap-1">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Get TCS Schema</span>
+                  </button>
                 </div>
               </div>
-
-              <button onclick="validateAndProceedToInstructions()" class="w-full py-2.5 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition">
-                <span>Proceed to Instructions</span>
-                <i data-lucide="arrow-right" class="w-4 h-4"></i>
-              </button>
-
             </div>
 
           </main>
@@ -1200,7 +1310,7 @@
             <div class="flex items-center gap-2">
               <button onclick="window.print()" class="text-xs bg-blue-700 hover:bg-blue-800 px-3.5 py-1.5 rounded text-white font-semibold flex items-center gap-1.5 transition shadow-sm">
                 <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                <span>Print PDF</span>
+                <span>Print Scorecard PDF</span>
               </button>
 
               <button onclick="clearSavedSession(); STATE.view = 'LANDING'; loadPreset('tcs'); renderApp();" class="text-xs bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1.5 rounded text-slate-700 font-medium transition shadow-sm">
@@ -1216,11 +1326,13 @@
               
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                 <div>
+                  <div class="text-[11px] font-bold text-blue-700 uppercase tracking-wider mb-0.5">${data.company}</div>
                   <h2 class="text-base font-bold text-slate-900">${STATE.candidate.name || 'Candidate'}</h2>
-                  <div class="text-xs text-slate-500 font-mono">ID: ${STATE.candidate.regNo || 'N/A'}</div>
+                  <div class="text-xs text-slate-500 font-mono">Roll / Reg ID: ${STATE.candidate.regNo || 'N/A'}</div>
                 </div>
 
                 <div class="text-left sm:text-right text-xs text-slate-600 space-y-0.5">
+                  <div><strong>Exam:</strong> ${data.title}</div>
                   <div><strong>Date:</strong> ${STATE.examTimings.date || new Date().toLocaleDateString()}</div>
                   <div><strong>Timings:</strong> ${STATE.examTimings.startTime || '--:--'} to ${STATE.examTimings.endTime || '--:--'}</div>
                   <div><strong>Duration:</strong> ${data.totalTimeMinutes} Minutes</div>
@@ -1248,13 +1360,12 @@
                   </div>
                 </div>
               </div>
-
             </div>
 
             <!-- Section-wise Performance Table -->
             <div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
               <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800 uppercase">
-                Section Performance
+                Section Performance Summary
               </div>
 
               <div class="overflow-x-auto">
@@ -1285,10 +1396,11 @@
               </div>
             </div>
 
-            <!-- Question Review & Solutions -->
-            <div class="bg-white border border-slate-200 rounded p-4 space-y-4 shadow-sm">
-              <div class="font-bold text-xs text-slate-900 border-b border-slate-200 pb-2">
-                Detailed Solutions
+            <!-- Question Review & Solutions (Excluded from print) -->
+            <div class="bg-white border border-slate-200 rounded p-4 space-y-4 shadow-sm no-print">
+              <div class="font-bold text-xs text-slate-900 border-b border-slate-200 pb-2 flex items-center justify-between">
+                <span>Detailed Solutions & Analysis (Online Review Only)</span>
+                <span class="text-[11px] text-slate-400 font-normal">Excluded from print scorecard</span>
               </div>
 
               <div class="space-y-4">
