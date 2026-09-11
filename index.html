@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assessment Portal</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Courier New', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    /* Clean Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f8fafc;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Authentic Palette Shapes */
+    .palette-btn {
+      position: relative;
+      transition: all 0.1s ease-in-out;
+    }
+
+    .palette-not-visited {
+      background-color: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 3px;
+    }
+
+    .palette-not-answered {
+      background-color: #dc2626;
+      color: #ffffff;
+      clip-path: polygon(0 0, 100% 0, 100% 80%, 50% 100%, 0 80%);
+    }
+
+    .palette-answered {
+      background-color: #16a34a;
+      color: #ffffff;
+      clip-path: polygon(50% 0%, 100% 20%, 100% 100%, 0 100%, 0 20%);
+    }
+
+    .palette-marked {
+      background-color: #9333ea;
+      color: #ffffff;
+      border-radius: 50%;
+    }
+
+    .palette-marked-answered {
+      background-color: #7e22ce;
+      color: #ffffff;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .palette-marked-answered::after {
+      content: '';
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      width: 9px;
+      height: 9px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+    }
+
+    /* Print styling */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+
+      #printable-report,
+      #printable-report * {
+        visibility: visible;
+      }
+
+      #printable-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* Low timer alert */
+    @keyframes timerAlert {
+
+      0%,
+      100% {
+        background-color: #fee2e2;
+        color: #dc2626;
+      }
+
+      50% {
+        background-color: #dc2626;
+        color: #ffffff;
+      }
+    }
+
+    .timer-critical {
+      animation: timerAlert 1s infinite ease-in-out;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col select-none antialiased">
+
+  <!-- APP ROOT -->
+  <div id="app" class="flex flex-col min-h-screen"></div>
+
+  <!-- MODALS ROOT -->
+  <div id="modal-root"></div>
+
+  <!-- APPLICATION CODE -->
+  <script>
+    let PRESETS = {};
+
+    function getTotalQuestionCount(assessmentObj) {
+      if (!assessmentObj || !Array.isArray(assessmentObj.sections)) return 0;
+      return assessmentObj.sections.reduce((sum, sec) => sum + (Array.isArray(sec.questions) ? sec.questions.length : 0), 0);
+    }
+
+    /**
+     * STATE STORE
+     */
+    const STATE = {
+      view: 'LANDING',
+      selectedPresetKey: 'tcs',
+      assessmentData: null,
+      uploadedFileName: null,
+      candidate: {
+        name: "",
+        regNo: ""
+      },
+      examTimings: {
+        date: "",
+        startTime: "",
+        endTime: "",
+        durationMinutes: 0
+      },
+      examState: {
+        currentSectionIdx: 0,
+        currentQuestionIdx: 0,
+        answers: {},
+        statuses: {},
+        sectionTimeRemaining: {},
+        overallTimeRemaining: 0,
+        timerInterval: null,
+        tabSwitchCount: 0,
+        isCompleted: false
+      },
+      fontSizeLevel: 1,
+      activeModal: null
+    };
+
+    const STORAGE_KEY = 'ASSESSMENT_PORTAL_SESSION';
+
+    function formatTime(totalSeconds) {
+      if (isNaN(totalSeconds) || totalSeconds < 0) totalSeconds = 0;
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = Math.floor(totalSeconds % 60);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function loadPreset(presetKey) {
+      clearSavedSession();
+      STATE.uploadedFileName = null;
+      if (!PRESETS[presetKey]) return;
+      STATE.selectedPresetKey = presetKey;
+      STATE.assessmentData = JSON.parse(JSON.stringify(PRESETS[presetKey]));
+      STATE.assessmentData.passingCutoffPercentage = 70;
+      initExamState();
+    }
+
+    function initExamState() {
+      if (!STATE.assessmentData) return;
+      const data = STATE.assessmentData;
+      const totalSec = (data.totalTimeMinutes || 75) * 60;
+
+      const secTimers = {};
+      data.sections.forEach(sec => {
+        secTimers[sec.id] = (sec.timeLimitMinutes || Math.floor(data.totalTimeMinutes / data.sections.length)) * 60;
+      });
+
+      const initialStatuses = {};
+      data.sections.forEach((sec, sIdx) => {
+        sec.questions.forEach((q, qIdx) => {
+          initialStatuses[q.id] = (sIdx === 0 && qIdx === 0) ? 'NOT_ANSWERED' : 'NOT_VISITED';
+        });
+      });
+
+      STATE.examState = {
+        currentSectionIdx: 0,
+        currentQuestionIdx: 0,
+        answers: {},
+        statuses: initialStatuses,
+        sectionTimeRemaining: secTimers,
+        overallTimeRemaining: totalSec,
+        timerInterval: null,
+        tabSwitchCount: 0,
+        isCompleted: false
+      };
+    }
+
+    function saveSessionToStorage() {
+      try {
+        const payload = {
+          view: STATE.view,
+          selectedPresetKey: STATE.selectedPresetKey,
+          assessmentData: STATE.assessmentData,
+          uploadedFileName: STATE.uploadedFileName,
+          candidate: STATE.candidate,
+          examTimings: STATE.examTimings,
+          examState: { ...STATE.examState, timerInterval: null }
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) { }
+    }
+
+    function restoreSessionFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.assessmentData && parsed.examState && !parsed.examState.isCompleted) {
+            STATE.view = parsed.view;
+            STATE.selectedPresetKey = parsed.selectedPresetKey;
+            STATE.assessmentData = parsed.assessmentData;
+            STATE.uploadedFileName = parsed.uploadedFileName;
+            STATE.candidate = parsed.candidate || { name: "", regNo: "" };
+            STATE.examTimings = parsed.examTimings || {};
+            STATE.examState = parsed.examState;
+            return true;
+          }
+        }
+      } catch (e) { }
+      return false;
+    }
+
+    function clearSavedSession() {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+
+    // Timer & Proctoring
+    function startTimer() {
+      if (STATE.examState.timerInterval) clearInterval(STATE.examState.timerInterval);
+
+      const now = new Date();
+      STATE.examTimings.date = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      STATE.examTimings.startTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      STATE.examState.timerInterval = setInterval(() => {
+        const exam = STATE.examState;
+        const currentSec = STATE.assessmentData.sections[exam.currentSectionIdx];
+
+        if (exam.overallTimeRemaining > 0) {
+          exam.overallTimeRemaining--;
+        } else {
+          clearInterval(exam.timerInterval);
+          alert("Time's Up. Your assessment is being submitted.");
+          submitExam();
+          return;
+        }
+
+        if (STATE.assessmentData.sectionalTiming && currentSec) {
+          const secTime = exam.sectionTimeRemaining[currentSec.id];
+          if (secTime > 0) {
+            exam.sectionTimeRemaining[currentSec.id]--;
+          } else {
+            if (exam.currentSectionIdx < STATE.assessmentData.sections.length - 1) {
+              alert(`Section time for "${currentSec.name}" ended. Moving to next section.`);
+              exam.currentSectionIdx++;
+              exam.currentQuestionIdx = 0;
+              markQuestionVisited(exam.currentSectionIdx, 0);
+            } else {
+              clearInterval(exam.timerInterval);
+              alert("Final section time ended. Submitting exam now.");
+              submitExam();
+              return;
+            }
+          }
+        }
+
+        saveSessionToStorage();
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const timerEl = document.getElementById('overall-timer-display');
+      const remaining = STATE.assessmentData.sectionalTiming
+        ? STATE.examState.sectionTimeRemaining[STATE.assessmentData.sections[STATE.examState.currentSectionIdx]?.id] || 0
+        : STATE.examState.overallTimeRemaining;
+
+      if (timerEl) {
+        timerEl.innerText = formatTime(remaining);
+        if (remaining < 300) timerEl.classList.add('timer-critical');
+        else timerEl.classList.remove('timer-critical');
+      }
+    }
+
+    function setupAntiCheatListeners() {
+      window.addEventListener('blur', () => {
+        if (STATE.view === 'EXAM' && !STATE.examState.isCompleted) {
+          STATE.examState.tabSwitchCount++;
+          saveSessionToStorage();
+          showWarningToast(`⚠️ Tab switch detected (${STATE.examState.tabSwitchCount})`);
+        }
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && STATE.view === 'EXAM' && !STATE.examState.isCompleted) {
+          STATE.examState.tabSwitchCount++;
+          saveSessionToStorage();
+          showWarningToast(`⚠️ Window focus lost`);
+        }
+      });
+    }
+
+    function showWarningToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed top-4 right-4 z-50 bg-red-700 text-white font-semibold text-xs px-4 py-2.5 rounded shadow-lg border border-red-800 flex items-center gap-2';
+      toast.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i><span>${msg}</span>`;
+      document.body.appendChild(toast);
+      lucide.createIcons();
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function requestFullscreenMode() {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) elem.requestFullscreen().catch(() => { });
+      else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    }
+
+    // Navigation & Palette Actions
+    function getCurrentQuestion() {
+      const sec = STATE.assessmentData.sections[STATE.examState.currentSectionIdx];
+      return sec ? sec.questions[STATE.examState.currentQuestionIdx] : null;
+    }
+
+    function markQuestionVisited(secIdx, qIdx) {
+      const sec = STATE.assessmentData.sections[secIdx];
+      if (!sec) return;
+      const q = sec.questions[qIdx];
+      if (!q) return;
+
+      const currentStatus = STATE.examState.statuses[q.id];
+      if (!currentStatus || currentStatus === 'NOT_VISITED') {
+        STATE.examState.statuses[q.id] = 'NOT_ANSWERED';
+      }
+    }
+
+    function selectOption(optIndex) {
+      const q = getCurrentQuestion();
+      if (!q) return;
+      STATE.examState.answers[q.id] = optIndex;
+      renderApp();
+    }
+
+    function clearResponse() {
+      const q = getCurrentQuestion();
+      if (!q) return;
+      delete STATE.examState.answers[q.id];
+
+      const currentStatus = STATE.examState.statuses[q.id];
+      if (currentStatus === 'MARKED_ANSWERED') {
+        STATE.examState.statuses[q.id] = 'MARKED';
+      } else {
+        STATE.examState.statuses[q.id] = 'NOT_ANSWERED';
+      }
+      saveSessionToStorage();
+      renderApp();
+    }
+
+    function saveAndNext() {
+      const q = getCurrentQuestion();
+      if (!q) return;
+
+      const hasAnswer = STATE.examState.answers[q.id] !== undefined;
+      STATE.examState.statuses[q.id] = hasAnswer ? 'ANSWERED' : 'NOT_ANSWERED';
+      navigateToNextQuestion();
+    }
+
+    function markForReviewAndNext() {
+      const q = getCurrentQuestion();
+      if (!q) return;
+
+      const hasAnswer = STATE.examState.answers[q.id] !== undefined;
+      STATE.examState.statuses[q.id] = hasAnswer ? 'MARKED_ANSWERED' : 'MARKED';
+      navigateToNextQuestion();
+    }
+
+    function navigateToNextQuestion() {
+      const curSec = STATE.assessmentData.sections[STATE.examState.currentSectionIdx];
+      if (STATE.examState.currentQuestionIdx < curSec.questions.length - 1) {
+        STATE.examState.currentQuestionIdx++;
+      } else if (STATE.examState.currentSectionIdx < STATE.assessmentData.sections.length - 1) {
+        if (!STATE.assessmentData.sectionalTiming) {
+          STATE.examState.currentSectionIdx++;
+          STATE.examState.currentQuestionIdx = 0;
+        } else {
+          showWarningToast("Section locked until time expires or section is completed.");
+        }
+      }
+      markQuestionVisited(STATE.examState.currentSectionIdx, STATE.examState.currentQuestionIdx);
+      saveSessionToStorage();
+      renderApp();
+    }
+
+    function navigateToPrevQuestion() {
+      if (STATE.examState.currentQuestionIdx > 0) {
+        STATE.examState.currentQuestionIdx--;
+      } else if (STATE.examState.currentSectionIdx > 0 && !STATE.assessmentData.sectionalTiming) {
+        STATE.examState.currentSectionIdx--;
+        const prevSec = STATE.assessmentData.sections[STATE.examState.currentSectionIdx];
+        STATE.examState.currentQuestionIdx = prevSec.questions.length - 1;
+      }
+      markQuestionVisited(STATE.examState.currentSectionIdx, STATE.examState.currentQuestionIdx);
+      saveSessionToStorage();
+      renderApp();
+    }
+
+    function jumpToQuestion(secIdx, qIdx) {
+      if (STATE.assessmentData.sectionalTiming && secIdx !== STATE.examState.currentSectionIdx) {
+        showWarningToast("Section navigation locked in this pattern.");
+        return;
+      }
+      STATE.examState.currentSectionIdx = secIdx;
+      STATE.examState.currentQuestionIdx = qIdx;
+      markQuestionVisited(secIdx, qIdx);
+      saveSessionToStorage();
+      renderApp();
+    }
+
+    function switchSectionTab(secIdx) {
+      if (STATE.assessmentData.sectionalTiming && secIdx !== STATE.examState.currentSectionIdx) {
+        showWarningToast("Section navigation locked in this pattern.");
+        return;
+      }
+      STATE.examState.currentSectionIdx = secIdx;
+      STATE.examState.currentQuestionIdx = 0;
+      markQuestionVisited(secIdx, 0);
+      saveSessionToStorage();
+      renderApp();
+    }
+
+    // Scoring & Analytics
+    function submitExam() {
+      if (STATE.examState.timerInterval) clearInterval(STATE.examState.timerInterval);
+      const now = new Date();
+      STATE.examTimings.endTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      STATE.examState.isCompleted = true;
+      STATE.view = 'RESULT';
+      saveSessionToStorage();
+      renderApp();
+
+      setTimeout(() => {
+        try { confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } }); } catch (e) { }
+      }, 300);
+    }
+
+    function calculateAnalytics() {
+      const data = STATE.assessmentData;
+      let totalQuestions = 0;
+      let totalMaxMarks = 0;
+      let totalScore = 0;
+      let attemptedCount = 0;
+      let correctCount = 0;
+      let incorrectCount = 0;
+      let unattemptedCount = 0;
+      let markedCount = 0;
+
+      const sectionAnalytics = data.sections.map(sec => {
+        let secMaxMarks = 0;
+        let secScore = 0;
+        let secAttempted = 0;
+        let secCorrect = 0;
+        let secIncorrect = 0;
+        let secUnattempted = 0;
+
+        sec.questions.forEach(q => {
+          totalQuestions++;
+          secMaxMarks += (q.marks || 1);
+          totalMaxMarks += (q.marks || 1);
+
+          const ans = STATE.examState.answers[q.id];
+          const status = STATE.examState.statuses[q.id];
+
+          if (status === 'MARKED' || status === 'MARKED_ANSWERED') markedCount++;
+
+          if (ans !== undefined) {
+            secAttempted++;
+            attemptedCount++;
+            if (ans === q.correctAnswer) {
+              secCorrect++;
+              correctCount++;
+              secScore += (q.marks || 1);
+              totalScore += (q.marks || 1);
+            } else {
+              secIncorrect++;
+              incorrectCount++;
+              const neg = (data.negativeMarking ? (q.negativeMarks || 0) : 0);
+              secScore -= neg;
+              totalScore -= neg;
+            }
+          } else {
+            secUnattempted++;
+            unattemptedCount++;
+          }
+        });
+
+        const secAccuracy = secAttempted > 0 ? ((secCorrect / secAttempted) * 100).toFixed(1) : 0;
+
+        return {
+          id: sec.id,
+          name: sec.name,
+          totalQuestions: sec.questions.length,
+          attempted: secAttempted,
+          correct: secCorrect,
+          incorrect: secIncorrect,
+          unattempted: secUnattempted,
+          maxMarks: secMaxMarks,
+          score: Math.max(0, secScore),
+          accuracy: secAccuracy
+        };
+      });
+
+      const percentage = totalMaxMarks > 0 ? ((Math.max(0, totalScore) / totalMaxMarks) * 100).toFixed(1) : 0;
+      const overallAccuracy = attemptedCount > 0 ? ((correctCount / attemptedCount) * 100).toFixed(1) : 0;
+
+      // Strict 70% cutoff
+      const cutoff = data.passingCutoffPercentage || 70;
+      const isQualified = parseFloat(percentage) >= cutoff;
+
+      return {
+        totalQuestions,
+        totalMaxMarks,
+        totalScore: Math.max(0, totalScore),
+        attemptedCount,
+        correctCount,
+        incorrectCount,
+        unattemptedCount,
+        markedCount,
+        percentage,
+        overallAccuracy,
+        cutoff,
+        isQualified,
+        sectionAnalytics
+      };
+    }
+
+    // Custom JSON upload handler
+    function handleCustomJsonUpload(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.title || !Array.isArray(parsed.sections) || parsed.sections.length === 0) {
+            throw new Error("JSON must contain 'title' and non-empty 'sections' array.");
+          }
+
+          let qCount = 0;
+          parsed.sections.forEach((sec, sIdx) => {
+            if (!sec.name || !Array.isArray(sec.questions)) {
+              throw new Error(`Section #${sIdx + 1} must contain 'name' and 'questions' array.`);
+            }
+            sec.questions.forEach((q, qIdx) => {
+              qCount++;
+              if (!q.text || !Array.isArray(q.options) || q.options.length < 2) {
+                throw new Error(`Question #${qIdx + 1} in '${sec.name}' is missing text or options.`);
+              }
+              if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+                throw new Error(`Question in '${sec.name}' has invalid 'correctAnswer' index.`);
+              }
+              q.id = q.id || `custom_q_${sIdx}_${qIdx}`;
+              q.marks = q.marks || 1;
+              q.negativeMarks = q.negativeMarks || 0;
+            });
+          });
+
+          if (qCount === 0) throw new Error("Assessment must contain at least 1 question.");
+
+          // Reset cache and load new file
+          clearSavedSession();
+          parsed.totalTimeMinutes = parsed.totalTimeMinutes || 75;
+          parsed.passingCutoffPercentage = 70; // Set to 70
+          parsed.company = parsed.company || "Custom Assessment";
+          parsed.presetName = "Custom Test";
+
+          STATE.assessmentData = parsed;
+          STATE.selectedPresetKey = 'custom';
+          STATE.uploadedFileName = file.name;
+          initExamState();
+          saveSessionToStorage();
+          renderApp();
+
+        } catch (err) {
+          alert(`Invalid Test JSON: ${err.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function removeUploadedFile() {
+      clearSavedSession();
+      STATE.uploadedFileName = null;
+      loadPreset('tcs');
+      renderApp();
+    }
+
+    function downloadCompanyPresetJson(presetKey) {
+      const presetData = PRESETS[presetKey];
+      if (!presetData) return;
+      const copy = JSON.parse(JSON.stringify(presetData));
+      copy.passingCutoffPercentage = 70;
+      const blob = new Blob([JSON.stringify(copy, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${presetKey}_exam_demo.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function validateAndProceedToInstructions() {
+      const name = STATE.candidate.name.trim();
+      const regNo = STATE.candidate.regNo.trim();
+
+      if (!name) {
+        alert("Please enter Candidate Name.");
+        return;
+      }
+      if (!regNo) {
+        alert("Please enter Registration Number.");
+        return;
+      }
+
+      saveSessionToStorage();
+      STATE.view = 'INSTRUCTIONS';
+      renderApp();
+    }
+
+    // =========================================================================
+    // UI VIEWS RENDERING
+    // =========================================================================
+
+    // 1. LANDING VIEW
+    function renderLandingView() {
+      const data = STATE.assessmentData;
+      const totalQ = getTotalQuestionCount(data);
+
+      const tcsCount = getTotalQuestionCount(PRESETS.tcs);
+      const infCount = getTotalQuestionCount(PRESETS.infosys);
+      const cogCount = getTotalQuestionCount(PRESETS.cognizant);
+
+      return `
+        <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between">
+          
+          <!-- Top Bar -->
+          <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded bg-blue-700 flex items-center justify-center text-white font-bold text-sm">
+                AP
+              </div>
+              <h1 class="font-bold text-base text-slate-900">Assessment Portal</h1>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="openModal('AI_PROMPT')" class="text-xs bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-medium px-3 py-1.5 rounded flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="bot" class="w-3.5 h-3.5 text-blue-700"></i>
+                AI Generator Prompt
+              </button>
+
+              <div class="relative group">
+                <button class="text-xs bg-blue-700 hover:bg-blue-800 text-white font-semibold px-3 py-1.5 rounded flex items-center gap-1.5 transition shadow-sm">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  Download Demo JSON
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                </button>
+                <div class="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded shadow-lg p-1 hidden group-hover:block z-50">
+                  <button onclick="downloadCompanyPresetJson('tcs')" class="w-full text-left px-3 py-2 rounded text-xs hover:bg-slate-100 text-slate-700 flex items-center justify-between">
+                    <span>TCS iON Pattern JSON</span>
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-600"></i>
+                  </button>
+                  <button onclick="downloadCompanyPresetJson('infosys')" class="w-full text-left px-3 py-2 rounded text-xs hover:bg-slate-100 text-slate-700 flex items-center justify-between">
+                    <span>Infosys Pattern JSON</span>
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-600"></i>
+                  </button>
+                  <button onclick="downloadCompanyPresetJson('cognizant')" class="w-full text-left px-3 py-2 rounded text-xs hover:bg-slate-100 text-slate-700 flex items-center justify-between">
+                    <span>Cognizant Pattern JSON</span>
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <!-- Main Selection Area -->
+          <main class="max-w-5xl mx-auto w-full p-6 my-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Side: Pattern Selection & Upload -->
+            <div class="lg:col-span-7 space-y-4">
+              
+              <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-3">
+                <h2 class="font-bold text-xs text-slate-600 uppercase tracking-wider">Select Assessment Pattern</h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button onclick="loadPreset('tcs'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'tcs' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                    <span class="font-bold text-xs text-slate-900">TCS iON Pattern</span>
+                    <span class="text-[11px] text-slate-500">${tcsCount} Questions • 75 Mins</span>
+                  </button>
+
+                  <button onclick="loadPreset('infosys'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'infosys' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                    <span class="font-bold text-xs text-slate-900">Infosys Pattern</span>
+                    <span class="text-[11px] text-slate-500">${infCount} Questions • 100 Mins</span>
+                  </button>
+
+                  <button onclick="loadPreset('cognizant'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'cognizant' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                    <span class="font-bold text-xs text-slate-900">Cognizant Pattern</span>
+                    <span class="text-[11px] text-slate-500">${cogCount} Questions • 85 Mins</span>
+                  </button>
+                </div>
+
+                <!-- Custom Upload Box with Active State -->
+                <div class="pt-2">
+                  <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Custom Test Upload</span>
+                  
+                  ${STATE.uploadedFileName ? `
+                    <div class="bg-emerald-50 border border-emerald-300 rounded p-3 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-700"></i>
+                        <div>
+                          <div class="text-xs font-bold text-emerald-900 truncate max-w-xs">${STATE.uploadedFileName}</div>
+                          <div class="text-[10px] text-emerald-700">File uploaded and loaded. Cache reset.</div>
+                        </div>
+                      </div>
+                      <button onclick="removeUploadedFile()" class="text-xs text-red-700 hover:text-red-900 bg-white border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded font-medium transition flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove
+                      </button>
+                    </div>
+                  ` : `
+                    <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded p-3.5 text-center cursor-pointer transition" onclick="document.getElementById('json-file-input').click()">
+                      <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="if(this.files[0]) handleCustomJsonUpload(this.files[0])" />
+                      <div class="flex items-center justify-center gap-2 text-xs font-medium text-slate-700">
+                        <i data-lucide="upload" class="w-4 h-4 text-blue-700"></i>
+                        <span>Upload Custom JSON File</span>
+                      </div>
+                    </div>
+                  `}
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- Right Side: Candidate Registration & Details -->
+            <div class="lg:col-span-5 bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+              
+              <div class="flex items-center justify-between pb-2.5 border-b border-slate-200">
+                <h3 class="font-bold text-xs uppercase tracking-wider text-slate-600">Candidate Information</h3>
+                <span class="text-xs px-2 py-0.5 rounded bg-slate-100 font-semibold text-slate-700">${data.company}</span>
+              </div>
+
+              <!-- Candidate Info Inputs (Blank by default) -->
+              <div class="space-y-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Candidate Full Name *</label>
+                  <input type="text" value="${STATE.candidate.name}" oninput="STATE.candidate.name = this.value; saveSessionToStorage();" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-600" placeholder="Enter your full name" />
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Registration / Roll ID *</label>
+                  <input type="text" value="${STATE.candidate.regNo}" oninput="STATE.candidate.regNo = this.value; saveSessionToStorage();" class="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600" placeholder="Enter registration ID" />
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-200 space-y-2 text-xs text-slate-600">
+                <div class="flex justify-between">
+                  <span>Questions:</span>
+                  <span class="font-bold text-slate-900">${totalQ}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Duration:</span>
+                  <span class="font-bold text-slate-900">${data.totalTimeMinutes} Minutes</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Passing Cutoff:</span>
+                  <span class="font-bold text-slate-900">70%</span>
+                </div>
+              </div>
+
+              <button onclick="validateAndProceedToInstructions()" class="w-full py-2.5 rounded bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition">
+                <span>Proceed to Instructions</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+
+            </div>
+
+          </main>
+
+          <!-- Footer -->
+          <footer class="bg-white border-t border-slate-200 text-center py-2.5 text-xs text-slate-500">
+            Assessment Portal • Client-Side System
+          </footer>
+        </div>
+      `;
+    }
+
+    // 2. INSTRUCTIONS VIEW
+    function renderInstructionsView() {
+      const data = STATE.assessmentData;
+      const totalQ = getTotalQuestionCount(data);
+
+      return `
+        <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between">
+          
+          <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="bg-blue-700 text-white font-bold text-xs px-2 py-0.5 rounded">${data.company}</span>
+              <span class="font-bold text-xs text-slate-900">${data.title}</span>
+            </div>
+
+            <button onclick="STATE.view = 'LANDING'; renderApp();" class="text-xs text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1 rounded font-medium transition shadow-sm">
+              Back
+            </button>
+          </header>
+
+          <main class="max-w-3xl mx-auto w-full p-6 my-auto bg-white border border-slate-200 rounded shadow-sm space-y-4">
+            
+            <h2 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2">General Instructions</h2>
+
+            <div class="text-xs text-slate-700 space-y-3 leading-relaxed">
+              <ul class="list-disc list-inside space-y-1 text-slate-600">
+                <li>Total duration: <strong>${data.totalTimeMinutes} minutes</strong>.</li>
+                <li>Total questions: <strong>${totalQ} questions</strong> across ${data.sections.length} sections.</li>
+                <li>Qualifying score: <strong>70%</strong>.</li>
+                <li>${data.sectionalTiming ? 'Sectional timing is enabled. Each section must be completed within its allotted duration.' : 'Section switching is enabled.'}</li>
+              </ul>
+
+              <!-- Palette -->
+              <div class="bg-slate-50 p-3 rounded border border-slate-200 space-y-2">
+                <div class="font-bold text-[11px] text-slate-600 uppercase">Palette Colors:</div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="flex items-center gap-2"><div class="w-5 h-5 flex items-center justify-center font-bold text-[10px] palette-not-visited">01</div><span>Not Visited</span></div>
+                  <div class="flex items-center gap-2"><div class="w-5 h-5 flex items-center justify-center font-bold text-[10px] palette-not-answered">02</div><span>Not Answered</span></div>
+                  <div class="flex items-center gap-2"><div class="w-5 h-5 flex items-center justify-center font-bold text-[10px] palette-answered">03</div><span>Answered</span></div>
+                  <div class="flex items-center gap-2"><div class="w-5 h-5 flex items-center justify-center font-bold text-[10px] palette-marked">04</div><span>Marked for Review</span></div>
+                  <div class="flex items-center gap-2 col-span-2"><div class="w-5 h-5 flex items-center justify-center font-bold text-[10px] palette-marked-answered">05</div><span>Answered & Marked (Evaluated)</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Declaration -->
+            <div class="pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
+                <input type="checkbox" id="declaration-check" class="w-4 h-4 rounded text-blue-600" onchange="document.getElementById('start-exam-btn').disabled = !this.checked;" />
+                <span>I have read all instructions.</span>
+              </label>
+
+              <button id="start-exam-btn" disabled onclick="requestFullscreenMode(); STATE.view = 'EXAM'; startTimer(); renderApp();" class="w-full sm:w-auto px-5 py-2 rounded bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:pointer-events-none text-white font-bold text-xs shadow-sm transition">
+                Start Assessment
+              </button>
+            </div>
+
+          </main>
+
+          <footer class="text-center py-2.5 text-xs text-slate-400">
+            Assessment Portal
+          </footer>
+        </div>
+      `;
+    }
+
+    // 3. LIVE EXAM VIEW
+    function renderExamView() {
+      const data = STATE.assessmentData;
+      const currentSec = data.sections[STATE.examState.currentSectionIdx];
+      const currentQ = getCurrentQuestion();
+      const currentQIdx = STATE.examState.currentQuestionIdx;
+
+      const fontClasses = ['text-xs leading-normal', 'text-sm leading-relaxed', 'text-base leading-loose'];
+      const fontClass = fontClasses[STATE.fontSizeLevel] || fontClasses[1];
+
+      let cntAnswered = 0;
+      let cntNotAnswered = 0;
+      let cntNotVisited = 0;
+      let cntMarked = 0;
+      let cntMarkedAnswered = 0;
+
+      data.sections.forEach(sec => {
+        sec.questions.forEach(q => {
+          const st = STATE.examState.statuses[q.id] || 'NOT_VISITED';
+          if (st === 'ANSWERED') cntAnswered++;
+          else if (st === 'NOT_ANSWERED') cntNotAnswered++;
+          else if (st === 'NOT_VISITED') cntNotVisited++;
+          else if (st === 'MARKED') cntMarked++;
+          else if (st === 'MARKED_ANSWERED') cntMarkedAnswered++;
+        });
+      });
+
+      const selectedOption = currentQ ? STATE.examState.answers[currentQ.id] : undefined;
+
+      return `
+        <div class="min-h-screen bg-slate-100 flex flex-col justify-between">
+          
+          <!-- Top Header -->
+          <header class="bg-blue-800 text-white px-4 py-2 shadow-sm flex items-center justify-between border-b border-blue-900">
+            <div class="flex items-center gap-2">
+              <span class="bg-blue-900 text-white font-bold text-xs px-2 py-0.5 rounded">${data.company}</span>
+              <span class="font-semibold text-xs text-slate-100 truncate max-w-xs">${data.title}</span>
+            </div>
+
+            <!-- Header Tools -->
+            <div class="flex items-center gap-3">
+              ${data.allowCalculator ? `
+                <button onclick="openModal('CALCULATOR')" class="text-xs bg-blue-700 hover:bg-blue-600 border border-blue-600 px-2.5 py-1 rounded flex items-center gap-1 text-white transition">
+                  <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+                  <span>Calculator</span>
+                </button>
+              ` : ''}
+
+              <button onclick="openModal('INSTRUCTIONS')" class="text-xs bg-blue-700 hover:bg-blue-600 border border-blue-600 px-2.5 py-1 rounded flex items-center gap-1 text-white transition">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                <span>Instructions</span>
+              </button>
+
+              <!-- Timer Display -->
+              <div class="bg-white text-slate-900 border border-slate-300 px-2.5 py-1 rounded flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-700"></i>
+                <div class="text-right">
+                  <div id="overall-timer-display" class="text-xs font-mono font-bold text-slate-900">
+                    ${formatTime(data.sectionalTiming ? STATE.examState.sectionTimeRemaining[currentSec.id] : STATE.examState.overallTimeRemaining)}
+                  </div>
+                </div>
+              </div>
+
+              <button onclick="openModal('SUBMIT_CONFIRM')" class="bg-red-700 hover:bg-red-800 text-white font-bold text-xs px-3 py-1.5 rounded shadow transition flex items-center gap-1">
+                <span>Submit</span>
+              </button>
+            </div>
+          </header>
+
+          <!-- Section Tabs -->
+          <div class="bg-white border-b border-slate-300 px-4 py-1.5 flex items-center justify-between shadow-sm overflow-x-auto">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-500 mr-1 hidden sm:inline">Sections:</span>
+              ${data.sections.map((sec, idx) => {
+        const isActive = idx === STATE.examState.currentSectionIdx;
+        const isLocked = data.sectionalTiming && !isActive;
+        let countAns = 0;
+        sec.questions.forEach(q => {
+          if (STATE.examState.answers[q.id] !== undefined) countAns++;
+        });
+
+        return `
+                  <button onclick="switchSectionTab(${idx})" ${isLocked ? 'disabled' : ''} class="px-3 py-1 rounded text-xs font-bold transition flex items-center gap-1.5 border ${isActive
+            ? 'bg-blue-700 text-white border-blue-800'
+            : isLocked
+              ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
+          }">
+                    <span>${sec.name}</span>
+                    <span class="px-1.5 py-0.2 rounded text-[10px] ${isActive ? 'bg-blue-900 text-white' : 'bg-slate-200 text-slate-700'}">
+                      ${countAns}/${sec.questions.length}
+                    </span>
+                  </button>
+                `;
+      }).join('')}
+            </div>
+
+            <div class="text-xs text-slate-600 font-medium hidden md:block">
+              Candidate: <strong class="text-slate-900">${STATE.candidate.name}</strong> (${STATE.candidate.regNo})
+            </div>
+          </div>
+
+          <!-- Main Grid -->
+          <main class="flex-1 max-w-[1700px] w-full mx-auto p-3 grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+            
+            <!-- Left Area (75%) -->
+            <div class="lg:col-span-8 xl:col-span-9 bg-white border border-slate-300 rounded shadow-sm flex flex-col justify-between overflow-hidden">
+              
+              <!-- Question Header -->
+              <div class="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-xs text-slate-900">
+                    Question No. ${currentQIdx + 1} of ${currentSec.questions.length}
+                  </span>
+                  <span class="text-xs text-slate-400">|</span>
+                  <span class="text-xs text-slate-600 font-medium">${currentSec.name}</span>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded font-semibold">
+                    +${currentQ ? currentQ.marks : 1}
+                  </span>
+                  ${data.negativeMarking ? `
+                    <span class="text-red-800 bg-red-50 border border-red-300 px-2 py-0.5 rounded font-semibold">
+                      -${currentQ ? currentQ.negativeMarks : 0}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- Question Body -->
+              <div class="p-5 flex-1 overflow-y-auto ${fontClass} text-slate-800 space-y-4">
+                <div class="text-slate-900 font-medium">
+                  ${formatQuestionContent(currentQ ? currentQ.text : 'No question')}
+                </div>
+
+                <!-- Options -->
+                <div class="space-y-2 pt-1">
+                  ${currentQ ? currentQ.options.map((opt, optIdx) => {
+        const isSelected = selectedOption === optIdx;
+        const optLabel = String.fromCharCode(65 + optIdx);
+
+        return `
+                      <label onclick="selectOption(${optIdx})" class="flex items-start gap-2.5 p-2.5 rounded border cursor-pointer transition select-none ${isSelected
+            ? 'border-blue-600 bg-blue-50/60 shadow-sm'
+            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+          }">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 ${isSelected ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 border border-slate-300'
+          }">
+                          ${optLabel}
+                        </div>
+                        <input type="radio" name="question_opt_${currentQ.id}" value="${optIdx}" ${isSelected ? 'checked' : ''} class="hidden" />
+                        <div class="flex-1 text-slate-800 text-xs sm:text-sm font-medium pt-0.5">
+                          ${escapeHtml(opt)}
+                        </div>
+                      </label>
+                    `;
+      }).join('') : ''}
+                </div>
+              </div>
+
+              <!-- Bottom Control Bar -->
+              <div class="bg-slate-50 border-t border-slate-300 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <button onclick="markForReviewAndNext()" class="px-3 py-1.5 rounded text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white transition">
+                    Mark for Review & Next
+                  </button>
+
+                  <button onclick="clearResponse()" class="px-3 py-1.5 rounded text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition">
+                    Clear Response
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="navigateToPrevQuestion()" class="px-3 py-1.5 rounded text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 transition">
+                    Previous
+                  </button>
+
+                  <button onclick="saveAndNext()" class="px-4 py-1.5 rounded text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white transition">
+                    Save & Next
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Area (25%) -->
+            <div class="lg:col-span-4 xl:col-span-3 flex flex-col gap-2.5">
+              
+              <!-- Palette Box -->
+              <div class="bg-white border border-slate-300 rounded shadow-sm flex-1 flex flex-col justify-between overflow-hidden">
+                <div class="p-2.5 bg-slate-50 border-b border-slate-200">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="font-bold text-xs text-slate-700 uppercase">Question Palette</span>
+                    <span class="text-[10px] text-slate-500">${currentSec.name}</span>
+                  </div>
+
+                  <!-- Counters -->
+                  <div class="grid grid-cols-2 gap-1 text-[10px]">
+                    <div class="flex items-center gap-1 bg-white p-1 rounded border border-slate-200">
+                      <span class="w-3.5 h-3.5 flex items-center justify-center font-bold text-[9px] palette-answered rounded-sm">${cntAnswered}</span>
+                      <span>Answered</span>
+                    </div>
+                    <div class="flex items-center gap-1 bg-white p-1 rounded border border-slate-200">
+                      <span class="w-3.5 h-3.5 flex items-center justify-center font-bold text-[9px] palette-not-answered rounded-sm">${cntNotAnswered}</span>
+                      <span>Not Answered</span>
+                    </div>
+                    <div class="flex items-center gap-1 bg-white p-1 rounded border border-slate-200">
+                      <span class="w-3.5 h-3.5 flex items-center justify-center font-bold text-[9px] palette-not-visited rounded-sm">${cntNotVisited}</span>
+                      <span>Not Visited</span>
+                    </div>
+                    <div class="flex items-center gap-1 bg-white p-1 rounded border border-slate-200">
+                      <span class="w-3.5 h-3.5 flex items-center justify-center font-bold text-[9px] palette-marked rounded-full">${cntMarked}</span>
+                      <span>Review</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Number Grid -->
+                <div class="p-2.5 flex-1 overflow-y-auto max-h-[42vh]">
+                  <div class="grid grid-cols-5 gap-1.5">
+                    ${currentSec.questions.map((q, idx) => {
+        const isCurrent = idx === currentQIdx;
+        const status = STATE.examState.statuses[q.id] || 'NOT_VISITED';
+
+        let shapeClass = 'palette-not-visited';
+        if (status === 'ANSWERED') shapeClass = 'palette-answered';
+        else if (status === 'NOT_ANSWERED') shapeClass = 'palette-not-answered';
+        else if (status === 'MARKED') shapeClass = 'palette-marked';
+        else if (status === 'MARKED_ANSWERED') shapeClass = 'palette-marked-answered';
+
+        return `
+                        <button onclick="jumpToQuestion(${STATE.examState.currentSectionIdx}, ${idx})" class="w-8 h-8 flex items-center justify-center text-xs font-bold palette-btn ${shapeClass} ${isCurrent ? 'ring-2 ring-blue-700 ring-offset-1' : ''}">
+                          ${idx + 1}
+                        </button>
+                      `;
+      }).join('')}
+                  </div>
+                </div>
+
+                <div class="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 flex justify-between">
+                  <span>🟢 Answered</span>
+                  <span>🔴 Skipped</span>
+                  <span>🟣 Review</span>
+                </div>
+              </div>
+
+            </div>
+
+          </main>
+
+          <footer class="bg-slate-200 text-slate-600 text-center py-1.5 text-[11px] border-t border-slate-300">
+            Assessment Portal
+          </footer>
+        </div>
+      `;
+    }
+
+    // 4. RESULT SCORECARD VIEW (Clean Minimal Report)
+    function renderResultView() {
+      const data = STATE.assessmentData;
+      const res = calculateAnalytics();
+
+      return `
+        <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between" id="printable-report">
+          
+          <header class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm flex items-center justify-between no-print">
+            <div>
+              <h1 class="font-bold text-sm text-slate-900">Assessment Scorecard</h1>
+              <p class="text-xs text-slate-500">${data.title}</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="window.print()" class="text-xs bg-blue-700 hover:bg-blue-800 px-3.5 py-1.5 rounded text-white font-semibold flex items-center gap-1.5 transition shadow-sm">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <span>Print PDF</span>
+              </button>
+
+              <button onclick="clearSavedSession(); STATE.view = 'LANDING'; loadPreset('tcs'); renderApp();" class="text-xs bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1.5 rounded text-slate-700 font-medium transition shadow-sm">
+                <span>New Exam</span>
+              </button>
+            </div>
+          </header>
+
+          <main class="max-w-4xl mx-auto w-full p-6 space-y-5 flex-1">
+            
+            <!-- Summary Header Card -->
+            <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
+              
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                <div>
+                  <h2 class="text-base font-bold text-slate-900">${STATE.candidate.name || 'Candidate'}</h2>
+                  <div class="text-xs text-slate-500 font-mono">ID: ${STATE.candidate.regNo || 'N/A'}</div>
+                </div>
+
+                <div class="text-left sm:text-right text-xs text-slate-600 space-y-0.5">
+                  <div><strong>Date:</strong> ${STATE.examTimings.date || new Date().toLocaleDateString()}</div>
+                  <div><strong>Timings:</strong> ${STATE.examTimings.startTime || '--:--'} to ${STATE.examTimings.endTime || '--:--'}</div>
+                  <div><strong>Duration:</strong> ${data.totalTimeMinutes} Minutes</div>
+                </div>
+              </div>
+
+              <!-- Score Summary -->
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                  <div class="text-[11px] text-slate-500 font-bold uppercase">Score Obtained</div>
+                  <div class="text-2xl font-bold text-blue-700 mt-0.5">${res.totalScore} <span class="text-xs text-slate-500">/ ${res.totalMaxMarks}</span></div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                  <div class="text-[11px] text-slate-500 font-bold uppercase">Percentage</div>
+                  <div class="text-2xl font-bold text-slate-900 mt-0.5">${res.percentage}%</div>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 flex flex-col justify-center">
+                  <div class="text-[11px] text-slate-500 font-bold uppercase">Status (Cutoff 70%)</div>
+                  <div class="text-xs font-bold mt-1">
+                    <span class="px-2 py-0.5 rounded ${res.isQualified ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                      ${res.isQualified ? 'QUALIFIED' : 'NOT QUALIFIED'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Section-wise Performance Table -->
+            <div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+              <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 font-bold text-xs text-slate-800 uppercase">
+                Section Performance
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-100 text-slate-600 border-b border-slate-200 font-semibold">
+                      <th class="p-2.5">Section</th>
+                      <th class="p-2.5 text-center">Total Qs</th>
+                      <th class="p-2.5 text-center">Attempted</th>
+                      <th class="p-2.5 text-center text-emerald-700">Correct</th>
+                      <th class="p-2.5 text-center text-red-700">Incorrect</th>
+                      <th class="p-2.5 text-center">Score</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200">
+                    ${res.sectionAnalytics.map(sec => `
+                      <tr>
+                        <td class="p-2.5 font-medium text-slate-800">${sec.name}</td>
+                        <td class="p-2.5 text-center">${sec.totalQuestions}</td>
+                        <td class="p-2.5 text-center">${sec.attempted}</td>
+                        <td class="p-2.5 text-center font-semibold text-emerald-700">${sec.correct}</td>
+                        <td class="p-2.5 text-center font-semibold text-red-700">${sec.incorrect}</td>
+                        <td class="p-2.5 text-center font-bold text-blue-700">${sec.score} / ${sec.maxMarks}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Question Review & Solutions -->
+            <div class="bg-white border border-slate-200 rounded p-4 space-y-4 shadow-sm">
+              <div class="font-bold text-xs text-slate-900 border-b border-slate-200 pb-2">
+                Detailed Solutions
+              </div>
+
+              <div class="space-y-4">
+                ${data.sections.map((sec, sIdx) => `
+                  <div class="border border-slate-200 rounded overflow-hidden">
+                    <div class="bg-slate-100 px-3 py-1.5 font-bold text-xs text-slate-800">
+                      ${sec.name}
+                    </div>
+
+                    <div class="p-3 space-y-3 divide-y divide-slate-100">
+                      ${sec.questions.map((q, qIdx) => {
+        const userAns = STATE.examState.answers[q.id];
+        const isAttempted = userAns !== undefined;
+        const isCorrect = isAttempted && userAns === q.correctAnswer;
+
+        let statusBadge = '';
+        if (!isAttempted) statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Unattempted</span>';
+        else if (isCorrect) statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">✓ Correct</span>';
+        else statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800">✗ Incorrect</span>';
+
+        return `
+                          <div class="pt-2.5 first:pt-0 space-y-2 text-xs">
+                            <div class="flex items-start justify-between gap-2">
+                              <div class="font-medium text-slate-900 flex-1">
+                                Q${qIdx + 1}. ${formatQuestionContent(q.text)}
+                              </div>
+                              <div class="shrink-0">${statusBadge}</div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                              ${q.options.map((opt, optIdx) => {
+          const isUserChoice = userAns === optIdx;
+          const isCorrectChoice = q.correctAnswer === optIdx;
+
+          let optStyle = 'border-slate-200 bg-slate-50 text-slate-700';
+          if (isCorrectChoice) optStyle = 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold';
+          else if (isUserChoice && !isCorrect) optStyle = 'border-red-400 bg-red-50 text-red-900 line-through';
+
+          return `
+                                  <div class="p-2 rounded border ${optStyle} flex items-center gap-1.5 text-xs">
+                                    <span class="font-bold">(${String.fromCharCode(65 + optIdx)})</span>
+                                    <span class="flex-1">${escapeHtml(opt)}</span>
+                                    ${isCorrectChoice ? '<span class="text-[10px] text-emerald-800 font-bold">Key</span>' : ''}
+                                  </div>
+                                `;
+        }).join('')}
+                            </div>
+
+                            <div class="bg-slate-50 p-2 rounded text-slate-700 text-xs">
+                              <strong>Solution:</strong> ${escapeHtml(q.explanation || 'Self-evident solution.')}
+                            </div>
+                          </div>
+                        `;
+      }).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+          </main>
+
+          <footer class="bg-white border-t border-slate-200 text-center py-2.5 text-xs text-slate-400 no-print">
+            Official Assessment Report
+          </footer>
+        </div>
+      `;
+    }
+
+    // MODALS
+    function openModal(modalType) {
+      STATE.activeModal = modalType;
+      renderModals();
+    }
+
+    function closeModal() {
+      STATE.activeModal = null;
+      renderModals();
+    }
+
+    function renderModals() {
+      const modalRoot = document.getElementById('modal-root');
+      if (!STATE.activeModal) {
+        modalRoot.innerHTML = '';
+        return;
+      }
+
+      if (STATE.activeModal === 'AI_PROMPT') {
+        const promptText = `You are an expert recruitment assessment question setter for premier tech companies (TCS, Infosys, Cognizant, Wipro, Accenture).
+
+I am providing you with an examination JSON structure. Your task is to modify OR generate realistic campus recruitment questions while strictly adhering to the formatting rules below.
+
+### 🚨 STRICT RULES FOR AI:
+1. DO NOT MODIFY ANY IDs: Never change section IDs ("id": "tcs_sec_...") or question IDs ("id": "tcs_num_01", "inf_rea_01", etc.). All IDs must remain 100% identical.
+2. DO NOT CHANGE SCHEMA KEYS OR STRUCTURE: Keep "title", "company", "totalTimeMinutes", "sectionalTiming", "negativeMarking", "sections", "questions", "marks", and "negativeMarks" intact.
+3. WHAT YOU MUST MODIFY:
+   - "text": The question statement. You can format code with \`\`\`c, \`\`\`java, \`\`\`python, or \`\`\`text, and inline code with \`varName\`.
+   - "options": An array of exactly 4 strings.
+   - "correctAnswer": The 0-indexed integer of the correct option (0 = Option A, 1 = Option B, 2 = Option C, 3 = Option D).
+   - "explanation": Step-by-step mathematical, logical, or programming solution explaining why the answer is correct.
+4. RETURN FORMAT: Return ONLY the valid, pure raw JSON object without surrounding conversational markdown commentary.`;
+
+        modalRoot.innerHTML = `
+          <div class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+            <div class="bg-white border border-slate-300 rounded shadow-xl w-full max-w-2xl overflow-hidden text-slate-800">
+              <div class="bg-slate-100 px-4 py-2.5 flex items-center justify-between border-b border-slate-200">
+                <span class="font-bold text-xs uppercase text-slate-800">AI Exam Generation Prompt</span>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+              </div>
+
+              <div class="p-4 space-y-2.5 text-xs">
+                <p class="text-slate-600">Copy this prompt into <strong>ChatGPT, Claude, or Gemini</strong> to generate compliant exam JSON files:</p>
+                <textarea id="ai-prompt-area" readonly class="w-full h-56 bg-slate-50 border border-slate-300 rounded p-2.5 font-mono text-xs text-slate-800 select-all">${promptText}</textarea>
+                <div class="flex justify-end pt-1">
+                  <button onclick="navigator.clipboard.writeText(document.getElementById('ai-prompt-area').value); alert('Copied to clipboard.');" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded text-xs transition">
+                    Copy Prompt
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (STATE.activeModal === 'CALCULATOR') {
+        modalRoot.innerHTML = `
+          <div class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+            <div class="bg-white border border-slate-300 rounded shadow-xl w-full max-w-xs overflow-hidden text-slate-800">
+              <div class="bg-slate-100 px-4 py-2 flex items-center justify-between border-b border-slate-200">
+                <span class="font-bold text-xs">Calculator</span>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+              </div>
+
+              <div class="p-3 space-y-2">
+                <input type="text" id="calc-display" readonly value="0" class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-right font-mono text-lg text-slate-900 font-bold" />
+                
+                <div class="grid grid-cols-4 gap-1 text-xs font-mono font-bold">
+                  <button onclick="calcClear()" class="p-2 bg-red-100 text-red-800 rounded">C</button>
+                  <button onclick="calcInput('(')" class="p-2 bg-slate-100 rounded">(</button>
+                  <button onclick="calcInput(')')" class="p-2 bg-slate-100 rounded">)</button>
+                  <button onclick="calcInput('/')" class="p-2 bg-blue-100 text-blue-800 rounded">/</button>
+
+                  <button onclick="calcInput('7')" class="p-2 bg-slate-50 border border-slate-200 rounded">7</button>
+                  <button onclick="calcInput('8')" class="p-2 bg-slate-50 border border-slate-200 rounded">8</button>
+                  <button onclick="calcInput('9')" class="p-2 bg-slate-50 border border-slate-200 rounded">9</button>
+                  <button onclick="calcInput('*')" class="p-2 bg-blue-100 text-blue-800 rounded">*</button>
+
+                  <button onclick="calcInput('4')" class="p-2 bg-slate-50 border border-slate-200 rounded">4</button>
+                  <button onclick="calcInput('5')" class="p-2 bg-slate-50 border border-slate-200 rounded">5</button>
+                  <button onclick="calcInput('6')" class="p-2 bg-slate-50 border border-slate-200 rounded">6</button>
+                  <button onclick="calcInput('-')" class="p-2 bg-blue-100 text-blue-800 rounded">-</button>
+
+                  <button onclick="calcInput('1')" class="p-2 bg-slate-50 border border-slate-200 rounded">1</button>
+                  <button onclick="calcInput('2')" class="p-2 bg-slate-50 border border-slate-200 rounded">2</button>
+                  <button onclick="calcInput('3')" class="p-2 bg-slate-50 border border-slate-200 rounded">3</button>
+                  <button onclick="calcInput('+')" class="p-2 bg-blue-100 text-blue-800 rounded">+</button>
+
+                  <button onclick="calcInput('0')" class="p-2 bg-slate-50 border border-slate-200 rounded col-span-2">0</button>
+                  <button onclick="calcInput('.')" class="p-2 bg-slate-50 border border-slate-200 rounded">.</button>
+                  <button onclick="calcSolve()" class="p-2 bg-emerald-700 text-white rounded">=</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (STATE.activeModal === 'INSTRUCTIONS') {
+        modalRoot.innerHTML = `
+          <div class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+            <div class="bg-white rounded shadow-xl w-full max-w-lg overflow-hidden text-slate-800 border border-slate-300">
+              <div class="bg-slate-100 px-4 py-2 flex items-center justify-between border-b border-slate-200">
+                <span class="font-bold text-xs">Exam Instructions</span>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+              </div>
+              <div class="p-4 space-y-2 text-xs leading-relaxed text-slate-700">
+                <p>1. <strong>Save & Next:</strong> Saves response and moves forward.</p>
+                <p>2. <strong>Clear Response:</strong> Clears selection.</p>
+                <p>3. <strong>Mark for Review:</strong> Flags for later review.</p>
+                <p>4. <strong>Passing Score:</strong> 70% required to qualify.</p>
+              </div>
+              <div class="p-2.5 bg-slate-50 border-t border-slate-200 text-right">
+                <button onclick="closeModal()" class="px-3 py-1 bg-slate-800 text-white text-xs font-bold rounded">Close</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (STATE.activeModal === 'SUBMIT_CONFIRM') {
+        const res = calculateAnalytics();
+        modalRoot.innerHTML = `
+          <div class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+            <div class="bg-white rounded shadow-xl w-full max-w-sm overflow-hidden text-slate-800 border border-slate-300">
+              <div class="bg-red-700 text-white px-4 py-2 font-bold text-xs">
+                Confirm Submission
+              </div>
+
+              <div class="p-4 space-y-3 text-xs">
+                <p class="text-slate-600">Are you sure you want to submit your assessment?</p>
+                <div class="bg-slate-50 border border-slate-200 p-2.5 rounded space-y-1">
+                  <div class="flex justify-between"><span>Total Questions:</span><strong>${res.totalQuestions}</strong></div>
+                  <div class="flex justify-between"><span class="text-emerald-700">Answered:</span><strong>${res.attemptedCount}</strong></div>
+                  <div class="flex justify-between"><span class="text-red-700">Unanswered:</span><strong>${res.unattemptedCount}</strong></div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+                <button onclick="closeModal()" class="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 font-bold text-xs rounded">Cancel</button>
+                <button onclick="closeModal(); submitExam();" class="px-3.5 py-1.5 bg-red-700 text-white font-bold text-xs rounded">Submit Exam</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Mini Calculator helper logic
+    let calcVal = '0';
+    function calcInput(char) {
+      if (calcVal === '0' && char !== '.') calcVal = char;
+      else calcVal += char;
+      document.getElementById('calc-display').value = calcVal;
+    }
+    function calcClear() {
+      calcVal = '0';
+      document.getElementById('calc-display').value = calcVal;
+    }
+    function calcSolve() {
+      try {
+        calcVal = String(Function(`'use strict'; return (${calcVal})`)());
+      } catch (e) {
+        calcVal = 'Error';
+      }
+      document.getElementById('calc-display').value = calcVal;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function formatQuestionContent(text) {
+      if (!text) return '';
+      let formatted = text.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+        return `<pre class="my-2 p-2.5 rounded bg-slate-900 text-emerald-400 font-mono text-xs overflow-x-auto border border-slate-700"><code>${escapeHtml(code.trim())}</code></pre>`;
+      });
+      formatted = formatted.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-slate-100 text-blue-800 font-mono text-xs border border-slate-300 font-semibold">$1</code>');
+      formatted = formatted.replace(/\n/g, '<br/>');
+      return formatted;
+    }
+
+    function setupKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        if (STATE.view !== 'EXAM' || STATE.activeModal) return;
+
+        if (['1', '2', '3', '4'].includes(e.key)) selectOption(parseInt(e.key) - 1);
+        else if (e.altKey && e.key.toLowerCase() === 's') { e.preventDefault(); saveAndNext(); }
+        else if (e.altKey && e.key.toLowerCase() === 'm') { e.preventDefault(); markForReviewAndNext(); }
+        else if (e.altKey && e.key.toLowerCase() === 'c') { e.preventDefault(); clearResponse(); }
+        else if (e.key === 'ArrowRight') navigateToNextQuestion();
+        else if (e.key === 'ArrowLeft') navigateToPrevQuestion();
+      });
+    }
+
+    function renderApp() {
+      const appRoot = document.getElementById('app');
+      if (STATE.view === 'LANDING') appRoot.innerHTML = renderLandingView();
+      else if (STATE.view === 'INSTRUCTIONS') appRoot.innerHTML = renderInstructionsView();
+      else if (STATE.view === 'EXAM') appRoot.innerHTML = renderExamView();
+      else if (STATE.view === 'RESULT') appRoot.innerHTML = renderResultView();
+      lucide.createIcons();
+    }
+
+    async function initApp() {
+      setupAntiCheatListeners();
+      setupKeyboardShortcuts();
+
+      try {
+        const [tcsRes, infRes, cogRes] = await Promise.allSettled([
+          fetch('tcs_nqt_demo.json').then(r => r.json()),
+          fetch('infosys_demo.json').then(r => r.json()),
+          fetch('cognizant_genc_demo.json').then(r => r.json())
+        ]);
+
+        if (tcsRes.status === 'fulfilled' && tcsRes.value) PRESETS.tcs = tcsRes.value;
+        if (infRes.status === 'fulfilled' && infRes.value) PRESETS.infosys = infRes.value;
+        if (cogRes.status === 'fulfilled' && cogRes.value) PRESETS.cognizant = cogRes.value;
+      } catch (err) { }
+
+      // Fallback fallback if running locally on file://
+      if (!PRESETS.tcs) {
+        PRESETS.tcs = {
+          title: "TCS National Qualifier Test (NQT) - Official Foundation Pattern",
+          company: "Tata Consultancy Services",
+          presetName: "TCS iON NQT",
+          totalTimeMinutes: 75,
+          sectionalTiming: true,
+          passingCutoffPercentage: 70,
+          negativeMarking: true,
+          allowCalculator: true,
+          sections: [
+            { id: "tcs_sec_numerical", name: "Numerical Ability", timeLimitMinutes: 25, questions: Array.from({ length: 20 }, (_, i) => ({ id: `tcs_num_${String(i + 1).padStart(2, '0')}`, text: `Numerical Ability Question #${i + 1}: Calculate the standard quantitative result.`, marks: 2, negativeMarks: 0.5, options: ["Option A (Correct)", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Standard mathematical solution." })) },
+            { id: "tcs_sec_reasoning", name: "Reasoning Ability", timeLimitMinutes: 25, questions: Array.from({ length: 20 }, (_, i) => ({ id: `tcs_rea_${String(i + 1).padStart(2, '0')}`, text: `Reasoning Ability Question #${i + 1}: Identify the logical conclusion.`, marks: 2, negativeMarks: 0.5, options: ["Option A (Correct)", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Logical syllogism deduction." })) },
+            { id: "tcs_sec_verbal", name: "Verbal Ability", timeLimitMinutes: 25, questions: Array.from({ length: 25 }, (_, i) => ({ id: `tcs_vrb_${String(i + 1).padStart(2, '0')}`, text: `Verbal Ability Question #${i + 1}: Choose the grammatically appropriate term.`, marks: 1, negativeMarks: 0.33, options: ["Option A (Correct)", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Standard grammatical rule." })) }
+          ]
+        };
+      }
+
+      if (!PRESETS.infosys) {
+        PRESETS.infosys = {
+          title: "Infosys Specialist Programmer & System Engineer Mock",
+          company: "Infosys Limited",
+          presetName: "Infosys Campus Assessment",
+          totalTimeMinutes: 100,
+          sectionalTiming: true,
+          passingCutoffPercentage: 70,
+          negativeMarking: false,
+          allowCalculator: false,
+          sections: [
+            { id: "inf_sec_reasoning", name: "Reasoning Ability", timeLimitMinutes: 25, questions: Array.from({ length: 15 }, (_, i) => ({ id: `inf_rea_${String(i + 1).padStart(2, '0')}`, text: `Reasoning Q#${i + 1}`, marks: 1, negativeMarks: 0, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Logic deduction." })) },
+            { id: "inf_sec_math", name: "Mathematical Ability", timeLimitMinutes: 35, questions: Array.from({ length: 10 }, (_, i) => ({ id: `inf_math_${String(i + 1).padStart(2, '0')}`, text: `Math Q#${i + 1}`, marks: 2, negativeMarks: 0, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Quantitative calculation." })) },
+            { id: "inf_sec_verbal", name: "Verbal Ability", timeLimitMinutes: 20, questions: Array.from({ length: 20 }, (_, i) => ({ id: `inf_vrb_${String(i + 1).padStart(2, '0')}`, text: `Verbal Q#${i + 1}`, marks: 1, negativeMarks: 0, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Vocabulary and comprehension." })) },
+            { id: "inf_sec_pseudocode", name: "Pseudocode", timeLimitMinutes: 10, questions: Array.from({ length: 5 }, (_, i) => ({ id: `inf_ps_${String(i + 1).padStart(2, '0')}`, text: `Pseudocode Q#${i + 1}`, marks: 3, negativeMarks: 0, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Algorithm dry run." })) },
+            { id: "inf_sec_puzzles", name: "Puzzle Solving", timeLimitMinutes: 10, questions: Array.from({ length: 4 }, (_, i) => ({ id: `inf_puz_${String(i + 1).padStart(2, '0')}`, text: `Puzzle Q#${i + 1}`, marks: 3, negativeMarks: 0, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Analytical puzzle." })) }
+          ]
+        };
+      }
+
+      if (!PRESETS.cognizant) {
+        PRESETS.cognizant = {
+          title: "Cognizant GenC / Elevate Assessment Mock (AMCAT)",
+          company: "Cognizant Technology Solutions",
+          presetName: "Cognizant AMCAT GenC",
+          totalTimeMinutes: 85,
+          sectionalTiming: false,
+          passingCutoffPercentage: 70,
+          negativeMarking: true,
+          allowCalculator: true,
+          sections: [
+            { id: "cog_sec_quant", name: "Quantitative Ability", timeLimitMinutes: 35, questions: Array.from({ length: 25 }, (_, i) => ({ id: `cog_q_${String(i + 1).padStart(2, '0')}`, text: `Quantitative Q#${i + 1}`, marks: 2, negativeMarks: 0.5, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Calculation." })) },
+            { id: "cog_sec_tech", name: "Automata Fix / Tech MCQs", timeLimitMinutes: 15, questions: Array.from({ length: 10 }, (_, i) => ({ id: `cog_t_${String(i + 1).padStart(2, '0')}`, text: `Tech MCQ Q#${i + 1}`, marks: 2, negativeMarks: 0.5, options: ["Option A", "Option B", "Option C", "Option D"], correctAnswer: 0, explanation: "Computer science theory." })) }
+          ]
+        };
+      }
+
+      // Ensure 70% cutoff
+      Object.keys(PRESETS).forEach(k => {
+        if (PRESETS[k]) PRESETS[k].passingCutoffPercentage = 70;
+      });
+
+      const restored = restoreSessionFromStorage();
+      if (!restored) loadPreset('tcs');
+
+      renderApp();
+      if (STATE.view === 'EXAM' && !STATE.examState.isCompleted) startTimer();
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+
+</html>

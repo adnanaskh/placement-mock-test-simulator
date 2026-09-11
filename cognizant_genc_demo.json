@@ -1,0 +1,350 @@
+{
+  "_ai_instructions": {
+    "IMPORTANT_FOR_AI": "CRITICAL INSTRUCTIONS FOR AI QUESTION GENERATOR:",
+    "RULE_1_DO_NOT_CHANGE_IDS": "DO NOT modify any section IDs ('id': 'cog_sec_...') or question IDs ('id': 'cog_q_...', 'cog_lr_...', 'cog_vrb_...', 'cog_t_...'). All IDs must remain strictly unchanged.",
+    "RULE_2_DO_NOT_CHANGE_STRUCTURE": "DO NOT change the schema structure, section names, time limits, or JSON keys.",
+    "RULE_3_WHAT_YOU_CAN_MODIFY": "You may ONLY modify the contents of 'text', 'options' (array of 4 strings), 'correctAnswer' (0-indexed integer: 0 for A, 1 for B, 2 for C, 3 for D), and 'explanation'.",
+    "RULE_4_FORMATTING": "Use markdown ```c, ```java, ```python, or ```text for code blocks and `code` for inline identifiers.",
+    "RULE_5_VALIDATION": "Return ONLY the valid raw JSON object without surrounding commentary."
+  },
+  "title": "Cognizant GenC / Elevate Assessment Mock (Official AMCAT Pattern)",
+  "company": "Cognizant Technology Solutions",
+  "presetName": "Cognizant AMCAT GenC",
+  "theme": "cognizant",
+  "totalTimeMinutes": 105,
+  "sectionalTiming": false,
+  "passingCutoffPercentage": 70,
+  "negativeMarking": true,
+  "allowCalculator": true,
+  "sections": [
+    {
+      "id": "cog_sec_quant",
+      "name": "Quantitative Ability",
+      "timeLimitMinutes": 35,
+      "questions": [
+        {
+          "id": "cog_q_01",
+          "text": "If log10(x) + log10(x - 3) = 1, find the valid real value of x.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["5", "-2", "5 or -2", "10"],
+          "correctAnswer": 0,
+          "explanation": "log10(x(x-3)) = 1 => x^2 - 3x - 10 = 0 => (x-5)(x+2)=0. Domain requires x > 3, so x = 5."
+        },
+        {
+          "id": "cog_q_02",
+          "text": "What is the probability of obtaining a total sum of 9 when two standard 6-sided dice are tossed together?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["1/9", "1/6", "1/12", "5/36"],
+          "correctAnswer": 0,
+          "explanation": "Pairs with sum 9: (3,6), (4,5), (5,4), (6,3) = 4 pairs out of 36 = 1/9."
+        },
+        {
+          "id": "cog_q_03",
+          "text": "The price of petrol increased by 25%. By what percentage must a car owner reduce fuel consumption so that the overall expenditure remains unchanged?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["20%", "25%", "16.66%", "30%"],
+          "correctAnswer": 0,
+          "explanation": "Reduction = (25 / 125) * 100 = 20%."
+        },
+        {
+          "id": "cog_q_04",
+          "text": "Find the greatest number of four digits which is exactly divisible by 15, 25, 40 and 75.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["9600", "9400", "9800", "9000"],
+          "correctAnswer": 0,
+          "explanation": "LCM(15, 25, 40, 75) = 600. 9999 - (9999 mod 600) = 9999 - 399 = 9600."
+        },
+        {
+          "id": "cog_q_05",
+          "text": "A sum of money placed at compound interest doubles itself in 5 years. It will amount to 8 times itself at the same rate of interest in:",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["15 years", "10 years", "20 years", "25 years"],
+          "correctAnswer": 0,
+          "explanation": "2^1 in 5 years => 2^3 in 3 * 5 = 15 years."
+        },
+        {
+          "id": "cog_q_06",
+          "text": "In a 100m race, A beats B by 10m and B beats C by 10m. By how many meters does A beat C in the same race?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["19 meters", "20 meters", "18 meters", "21 meters"],
+          "correctAnswer": 0,
+          "explanation": "When A covers 100m, B covers 90m and C covers 81m. A beats C by 100 - 81 = 19 meters."
+        },
+        {
+          "id": "cog_q_07",
+          "text": "A leak in the bottom of a tank can empty the full tank in 8 hours. An inlet pipe admits 6 liters a minute and now the tank is emptied in 12 hours. The capacity of the tank is:",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["8,640 liters", "7,200 liters", "5,760 liters", "4,320 liters"],
+          "correctAnswer": 0,
+          "explanation": "Inlet rate = 1/8 - 1/12 = 1/24. 24 hours * 60 min * 6 L = 8,640 liters."
+        },
+        {
+          "id": "cog_q_08",
+          "text": "What is the probability of picking an ace or a diamond from a standard deck of 52 cards?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["4/13", "17/52", "16/52", "3/13"],
+          "correctAnswer": 0,
+          "explanation": "(4 + 13 - 1) / 52 = 16 / 52 = 4/13."
+        },
+        {
+          "id": "cog_q_09",
+          "text": "A motorboat whose speed in still water is 15 km/hr goes 30 km downstream and comes back in a total of 4 hours 30 minutes. Find the speed of the stream.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["5 km/hr", "4 km/hr", "6 km/hr", "3 km/hr"],
+          "correctAnswer": 0,
+          "explanation": "30/(15+s) + 30/(15-s) = 4.5 => s = 5 km/hr."
+        },
+        {
+          "id": "cog_q_10",
+          "text": "If the radius of a circle is diminished by 10%, its area is diminished by:",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["19%", "20%", "10%", "21%"],
+          "correctAnswer": 0,
+          "explanation": "1 - (0.9)^2 = 1 - 0.81 = 19%."
+        },
+        {
+          "id": "cog_q_11",
+          "text": "Find the simple interest on Rs. 7,500 at 8% per annum for 3 years.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Rs. 1,800", "Rs. 1,600", "Rs. 2,000", "Rs. 1,750"],
+          "correctAnswer": 0,
+          "explanation": "SI = (7500 * 8 * 3) / 100 = Rs. 1,800."
+        },
+        {
+          "id": "cog_q_12",
+          "text": "Two numbers are in ratio 7:9. If their sum is 160, find the larger number.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["90", "70", "100", "80"],
+          "correctAnswer": 0,
+          "explanation": "16x = 160 => x = 10. Larger = 9 * 10 = 90."
+        },
+        {
+          "id": "cog_q_13",
+          "text": "If 12 workers build a wall in 15 days, in how many days can 20 workers build the same wall?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["9 days", "10 days", "8 days", "12 days"],
+          "correctAnswer": 0,
+          "explanation": "12 * 15 = 20 * D => D = 180 / 20 = 9 days."
+        },
+        {
+          "id": "cog_q_14",
+          "text": "Find the value of (0.04)^(-1.5):",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["125", "25", "625", "0.008"],
+          "correctAnswer": 0,
+          "explanation": "(1/25)^(-3/2) = (25)^(3/2) = (5^2)^(3/2) = 5^3 = 125."
+        },
+        {
+          "id": "cog_q_15",
+          "text": "A train travels at 90 km/h. How many meters does it cover in 18 seconds?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["450 meters", "500 meters", "400 meters", "360 meters"],
+          "correctAnswer": 0,
+          "explanation": "90 * (5/18) = 25 m/s. 25 * 18 = 450 meters."
+        },
+        {
+          "id": "cog_q_16",
+          "text": "The average of 5 consecutive odd numbers is 27. What is the smallest number?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["23", "25", "21", "27"],
+          "correctAnswer": 0,
+          "explanation": "The average of 5 consecutive odd numbers is the middle number (27). Numbers: 23, 25, 27, 29, 31. Smallest = 23."
+        },
+        {
+          "id": "cog_q_17",
+          "text": "A man buys a watch for Rs. 500 and sells it for Rs. 650. Find his profit percentage.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["30%", "25%", "35%", "20%"],
+          "correctAnswer": 0,
+          "explanation": "(150 / 500) * 100 = 30%."
+        },
+        {
+          "id": "cog_q_18",
+          "text": "If 15% of a number is 45, what is 40% of that number?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["120", "150", "100", "135"],
+          "correctAnswer": 0,
+          "explanation": "Number = 45 / 0.15 = 300. 40% of 300 = 120."
+        },
+        {
+          "id": "cog_q_19",
+          "text": "In how many ways can 5 books be arranged on a shelf?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["120", "60", "24", "720"],
+          "correctAnswer": 0,
+          "explanation": "5! = 120."
+        },
+        {
+          "id": "cog_q_20",
+          "text": "What is the value of 15% of 200 + 25% of 120?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["60", "55", "65", "50"],
+          "correctAnswer": 0,
+          "explanation": "30 + 30 = 60."
+        },
+        {
+          "id": "cog_q_21",
+          "text": "The diagonal of a square is 10 cm. Find its area.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["50 sq.cm", "100 sq.cm", "25 sq.cm", "75 sq.cm"],
+          "correctAnswer": 0,
+          "explanation": "Area = d^2 / 2 = 100 / 2 = 50 sq.cm."
+        },
+        {
+          "id": "cog_q_22",
+          "text": "A car covers 120 km in 2 hours and next 180 km in 3 hours. Find average speed.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["60 km/h", "65 km/h", "55 km/h", "70 km/h"],
+          "correctAnswer": 0,
+          "explanation": "Total distance = 300 km. Total time = 5 hours. Average = 300 / 5 = 60 km/h."
+        },
+        {
+          "id": "cog_q_23",
+          "text": "Find the HCF of 36 and 84.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["12", "6", "18", "24"],
+          "correctAnswer": 0,
+          "explanation": "Factors: 36 = 12*3, 84 = 12*7. HCF = 12."
+        },
+        {
+          "id": "cog_q_24",
+          "text": "If x + 1/x = 3, find x^2 + 1/x^2.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["7", "9", "11", "6"],
+          "correctAnswer": 0,
+          "explanation": "(x + 1/x)^2 - 2 = 3^2 - 2 = 7."
+        },
+        {
+          "id": "cog_q_25",
+          "text": "What is the compound interest on Rs. 5,000 for 2 years at 10% per annum?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Rs. 1,050", "Rs. 1,000", "Rs. 1,100", "Rs. 950"],
+          "correctAnswer": 0,
+          "explanation": "5000 * (1.1^2 - 1) = 5000 * 0.21 = Rs. 1,050."
+        }
+      ]
+    },
+    {
+      "id": "cog_sec_tech",
+      "name": "Automata Fix / Technical MCQs",
+      "timeLimitMinutes": 15,
+      "questions": [
+        {
+          "id": "cog_t_01",
+          "text": "What does the following JavaScript snippet evaluate to?\n\n```javascript\nconsole.log(typeof (function(){}()));\n```",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["\"undefined\"", "\"function\"", "\"object\"", "TypeError"],
+          "correctAnswer": 0,
+          "explanation": "IIFE evaluates to undefined. `typeof undefined` is string 'undefined'."
+        },
+        {
+          "id": "cog_t_02",
+          "text": "In SQL, which clause is specifically used to filter grouped data after an aggregation function has been applied?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["HAVING", "WHERE", "GROUP BY", "ORDER BY"],
+          "correctAnswer": 0,
+          "explanation": "HAVING filters aggregated groups."
+        },
+        {
+          "id": "cog_t_03",
+          "text": "What is the time complexity to search for a key in a Hash Map with a good uniform hash distribution?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["O(1) average", "O(N) always", "O(log N)", "O(N log N)"],
+          "correctAnswer": 0,
+          "explanation": "Average lookup is O(1)."
+        },
+        {
+          "id": "cog_t_04",
+          "text": "Which principle in Object Oriented Programming emphasizes hiding internal implementation details and exposing only interfaces?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Encapsulation / Abstraction", "Polymorphism", "Inheritance", "Coupling"],
+          "correctAnswer": 0,
+          "explanation": "Encapsulation / Abstraction hides implementation details."
+        },
+        {
+          "id": "cog_t_05",
+          "text": "What is the output of the following C statement?\n\n```c\nint x = 5;\nprintf(\"%d %d %d\", x++, x, ++x);\n```",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Undefined behavior (Compiler dependent)", "5 6 7", "7 7 7", "5 5 7"],
+          "correctAnswer": 0,
+          "explanation": "Modifying a variable multiple times without sequence points yields Undefined Behavior in C."
+        },
+        {
+          "id": "cog_t_06",
+          "text": "Which data structure is best suited for implementing a LIFO (Last In First Out) system?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Stack", "Queue", "Binary Tree", "Linked List"],
+          "correctAnswer": 0,
+          "explanation": "Stack operates on LIFO principle."
+        },
+        {
+          "id": "cog_t_07",
+          "text": "What is the worst case time complexity of Quick Sort?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["O(N^2)", "O(N log N)", "O(N)", "O(log N)"],
+          "correctAnswer": 0,
+          "explanation": "When pivot is poorly chosen (e.g. already sorted array with first element pivot), Quick Sort is O(N^2)."
+        },
+        {
+          "id": "cog_t_08",
+          "text": "In Java, which keyword prevents method overriding?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["final", "static", "abstract", "const"],
+          "correctAnswer": 0,
+          "explanation": "A 'final' method cannot be overridden by subclasses."
+        },
+        {
+          "id": "cog_t_09",
+          "text": "Which normal form removes transitive dependencies in relational database design?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["3NF (Third Normal Form)", "1NF", "2NF", "BCNF"],
+          "correctAnswer": 0,
+          "explanation": "3NF removes transitive functional dependencies on the primary key."
+        },
+        {
+          "id": "cog_t_10",
+          "text": "What does CSS property `box-sizing: border-box` do?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Includes padding and border within the element's total width and height", "Adds extra margin", "Removes borders", "Hides overflow content"],
+          "correctAnswer": 0,
+          "explanation": "`border-box` includes padding and border in the specified width and height."
+        }
+      ]
+    }
+  ]
+}

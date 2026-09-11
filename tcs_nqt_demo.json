@@ -1,0 +1,627 @@
+{
+  "_ai_instructions": {
+    "IMPORTANT_FOR_AI": "CRITICAL INSTRUCTIONS FOR AI QUESTION GENERATOR:",
+    "RULE_1_DO_NOT_CHANGE_IDS": "DO NOT modify any section IDs ('id': 'tcs_sec_...') or question IDs ('id': 'tcs_num_...', 'tcs_rea_...', 'tcs_vrb_...'). All IDs must remain strictly unchanged.",
+    "RULE_2_DO_NOT_CHANGE_STRUCTURE": "DO NOT change the schema structure, section names, time limits, or JSON keys.",
+    "RULE_3_WHAT_YOU_CAN_MODIFY": "You may ONLY modify the contents of 'text', 'options' (array of 4 strings), 'correctAnswer' (0-indexed integer: 0 for A, 1 for B, 2 for C, 3 for D), and 'explanation'.",
+    "RULE_4_FORMATTING": "Use markdown ```c, ```java, ```python, or ```text for code blocks and `code` for inline identifiers. Ensure mathematical expressions are clean and legible.",
+    "RULE_5_VALIDATION": "Return ONLY the valid raw JSON object without surrounding conversational markdown commentary."
+  },
+  "title": "TCS National Qualifier Test (NQT) - Official Full Foundation Mock",
+  "company": "Tata Consultancy Services (TCS iON)",
+  "presetName": "TCS iON NQT Official Pattern",
+  "theme": "tcs",
+  "totalTimeMinutes": 75,
+  "sectionalTiming": true,
+  "passingCutoffPercentage": 70,
+  "negativeMarking": true,
+  "allowCalculator": true,
+  "sections": [
+    {
+      "id": "tcs_sec_numerical",
+      "name": "Numerical Ability",
+      "timeLimitMinutes": 25,
+      "questions": [
+        {
+          "id": "tcs_num_01",
+          "text": "A shopkeeper sells two watches at Rs. 1,980 each. On one he gains 10% and on the other he loses 10%. What is his overall gain or loss percentage in the transaction?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["1% Loss", "1% Profit", "No Profit No Loss", "2% Loss"],
+          "correctAnswer": 0,
+          "explanation": "When two articles are sold at equal selling price with x% profit on one and x% loss on other, net result is always a loss of (x/10)^2 % = (10/10)^2 = 1% Loss."
+        },
+        {
+          "id": "tcs_num_02",
+          "text": "Find the remainder when 7^84 is divided by 342.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["1", "7", "49", "341"],
+          "correctAnswer": 0,
+          "explanation": "7^3 = 343 = (342 + 1). So 7^84 = (7^3)^28 = (342 + 1)^28. By Binomial Theorem, the remainder modulo 342 is 1^28 = 1."
+        },
+        {
+          "id": "tcs_num_03",
+          "text": "Six pipes can fill a water reservoir in 4 hours. If 2 pipes are closed after 1 hour of working together, how much additional time (in hours) will the remaining pipes take to fill the reservoir completely?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["3.5 hours", "4.5 hours", "4.0 hours", "5.0 hours"],
+          "correctAnswer": 1,
+          "explanation": "Total capacity = 6 * 4 = 24 pipe-hours. Work in first hour = 6 * 1 = 6 units. Remaining = 18 units. Remaining 4 pipes take 18 / 4 = 4.5 hours."
+        },
+        {
+          "id": "tcs_num_04",
+          "text": "The average age of a group of 8 individuals increases by 2.5 years when a new person replaces someone aged 24 years. What is the age of the new person?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["40 years", "44 years", "42 years", "46 years"],
+          "correctAnswer": 1,
+          "explanation": "Total increase in age sum = 8 * 2.5 = 20 years. Age of newcomer = 24 + 20 = 44 years."
+        },
+        {
+          "id": "tcs_num_05",
+          "text": "A sum of money invested at compound interest doubles itself in 4 years. In how many years will it become 8 times of itself at the same annual interest rate?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["8 years", "12 years", "16 years", "10 years"],
+          "correctAnswer": 1,
+          "explanation": "2^1 times takes 4 years. 8 times is 2^3. Time = 3 * 4 = 12 years."
+        },
+        {
+          "id": "tcs_num_06",
+          "text": "In an alloy of zinc and copper weighing 60 kg, the ratio of zinc to copper is 2:1. How much copper (in kg) must be added to make the ratio 1:2?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["40 kg", "60 kg", "30 kg", "50 kg"],
+          "correctAnswer": 1,
+          "explanation": "Initial Zinc = 40 kg, Copper = 20 kg. For ratio 1:2, Zinc/Copper = 40/(20 + x) = 1/2 => 20 + x = 80 => x = 60 kg."
+        },
+        {
+          "id": "tcs_num_07",
+          "text": "A train 150m long passes a pole in 15 seconds and another train of the same length travelling in opposite direction in 12 seconds. What is the speed of the second train in km/h?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["54 km/h", "36 km/h", "45 km/h", "60 km/h"],
+          "correctAnswer": 0,
+          "explanation": "Speed of train 1 = 150 / 15 = 10 m/s. Relative speed = (150 + 150) / 12 = 300 / 12 = 25 m/s. Speed of train 2 = 25 - 10 = 15 m/s = 15 * (18/5) = 54 km/h."
+        },
+        {
+          "id": "tcs_num_08",
+          "text": "What is the unit digit of (3^65 * 6^59 * 7^71)?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["4", "2", "6", "8"],
+          "correctAnswer": 0,
+          "explanation": "Unit digit of 3^65 = 3^(65 mod 4) = 3^1 = 3. Unit digit of 6^59 is always 6. Unit digit of 7^71 = 7^(71 mod 4) = 7^3 = 343 -> 3. Product unit digit = (3 * 6 * 3) mod 10 = 54 mod 10 = 4."
+        },
+        {
+          "id": "tcs_num_09",
+          "text": "A boat can travel with a speed of 13 km/hr in still water. If the speed of the stream is 4 km/hr, find the time taken by the boat to go 68 km downstream.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["4 hours", "5 hours", "3.5 hours", "4.5 hours"],
+          "correctAnswer": 0,
+          "explanation": "Downstream speed = 13 + 4 = 17 km/hr. Time = 68 / 17 = 4 hours."
+        },
+        {
+          "id": "tcs_num_10",
+          "text": "A container contains 40 liters of milk. From this container, 4 liters of milk was taken out and replaced by water. This process was repeated further two times. How much milk is now contained by the container?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["29.16 liters", "30.00 liters", "28.34 liters", "31.25 liters"],
+          "correctAnswer": 0,
+          "explanation": "Remaining milk = 40 * (1 - 4/40)^3 = 40 * (9/10)^3 = 40 * 729 / 1000 = 29.16 liters."
+        },
+        {
+          "id": "tcs_num_11",
+          "text": "If 15 men can complete a project in 20 days working 8 hours a day, how many hours a day must 20 men work to finish the same project in 12 days?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["10 hours", "8 hours", "12 hours", "9 hours"],
+          "correctAnswer": 0,
+          "explanation": "M1*D1*H1 = M2*D2*H2 => 15 * 20 * 8 = 20 * 12 * H2 => 2400 = 240 * H2 => H2 = 10 hours."
+        },
+        {
+          "id": "tcs_num_12",
+          "text": "The HCF and LCM of two numbers are 12 and 336 respectively. If one number is 84, what is the other number?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["48", "56", "64", "72"],
+          "correctAnswer": 0,
+          "explanation": "Product of two numbers = HCF * LCM => 84 * x = 12 * 336 => x = (12 * 336) / 84 = 48."
+        },
+        {
+          "id": "tcs_num_13",
+          "text": "A can do a piece of work in 12 days, while B can do it in 18 days. They work together for 4 days, then A leaves. In how many days will B finish the remaining work alone?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["8 days", "6 days", "10 days", "7 days"],
+          "correctAnswer": 0,
+          "explanation": "Total work = LCM(12, 18) = 36 units. Rate of A = 3, Rate of B = 2. In 4 days, together they do 4 * (3+2) = 20 units. Remaining = 16 units. B takes 16 / 2 = 8 days."
+        },
+        {
+          "id": "tcs_num_14",
+          "text": "If 20% of a = b, then b% of 20 is the same as:",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["4% of a", "5% of a", "20% of a", "None of these"],
+          "correctAnswer": 0,
+          "explanation": "b = 0.2a. b% of 20 = (b / 100) * 20 = (0.2a / 100) * 20 = 0.04a = 4% of a."
+        },
+        {
+          "id": "tcs_num_15",
+          "text": "The marked price of a shirt is Rs. 1,200. A retailer purchases it after two successive discounts of 20% and 10%. What was the purchase price?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Rs. 864", "Rs. 840", "Rs. 900", "Rs. 850"],
+          "correctAnswer": 0,
+          "explanation": "Price after 20% discount = 1200 * 0.80 = 960. Price after 10% discount = 960 * 0.90 = Rs. 864."
+        },
+        {
+          "id": "tcs_num_16",
+          "text": "A sum was put at simple interest at a certain rate for 3 years. Had it been put at 2% higher rate, it would have fetched Rs. 360 more. Find the principal sum.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Rs. 6,000", "Rs. 5,000", "Rs. 7,200", "Rs. 4,800"],
+          "correctAnswer": 0,
+          "explanation": "Extra interest = P * 2% * 3 = 0.06P = 360 => P = 360 / 0.06 = Rs. 6,000."
+        },
+        {
+          "id": "tcs_num_17",
+          "text": "In how many different ways can the letters of the word 'CORPORATION' be arranged so that all the vowels always come together?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["50,400", "28,800", "12,600", "42,000"],
+          "correctAnswer": 0,
+          "explanation": "Word has 11 letters: C, R, P, R, T, N (6 consonants: 2 R's) and O, O, A, I, O (5 vowels: 3 O's, 1 A, 1 I). Arrangements = (7! / 2!) * (5! / 3!) = 2520 * 20 = 50,400."
+        },
+        {
+          "id": "tcs_num_18",
+          "text": "Two cards are drawn together at random from a standard pack of 52 playing cards. What is the probability that both cards are Kings?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["1/221", "1/13", "4/221", "2/169"],
+          "correctAnswer": 0,
+          "explanation": "Favorable outcomes = 4C2 = 6. Total outcomes = 52C2 = 1326. Probability = 6 / 1326 = 1 / 221."
+        },
+        {
+          "id": "tcs_num_19",
+          "text": "A motor car finishes a journey in 10 hours, the first half at 21 km/hr and the second half at 24 km/hr. Find the total distance of the journey in km.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["224 km", "240 km", "210 km", "250 km"],
+          "correctAnswer": 0,
+          "explanation": "Let half distance be D. (D / 21) + (D / 24) = 10 => 45D / 504 = 10 => D = 112 km. Total distance = 2D = 224 km."
+        },
+        {
+          "id": "tcs_num_20",
+          "text": "The ratio between the perimeter and the breadth of a rectangle is 5:1. If the area of the rectangle is 216 sq.cm, what is the length of the rectangle?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["18 cm", "12 cm", "24 cm", "16 cm"],
+          "correctAnswer": 0,
+          "explanation": "2(L + B) / B = 5/1 => 2L + 2B = 5B => 2L = 3B => B = (2/3)L. Area = L * (2/3)L = 216 => L^2 = 324 => L = 18 cm."
+        }
+      ]
+    },
+    {
+      "id": "tcs_sec_reasoning",
+      "name": "Reasoning Ability",
+      "timeLimitMinutes": 25,
+      "questions": [
+        {
+          "id": "tcs_rea_01",
+          "text": "In a certain code, 'PENCIL' is written as 'QGPEKN'. How is 'MARKER' coded in that same system?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["NCTMHT", "OCTMGT", "NDUNGU", "NBTMHT"],
+          "correctAnswer": 0,
+          "explanation": "Pattern: P+1=Q, E+2=G, N+2=P, C+2=E, I+2=K, L+2=N. Applying to MARKER yields NCTMHT."
+        },
+        {
+          "id": "tcs_rea_02",
+          "text": "Statements:\n1. All developers are thinkers.\n2. Some thinkers are problem solvers.\nConclusions:\nI. Some developers are problem solvers.\nII. Some thinkers are developers.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Only Conclusion II follows", "Only Conclusion I follows", "Both I and II follow", "Neither follows"],
+          "correctAnswer": 0,
+          "explanation": "'All developers are thinkers' converts immediately to 'Some thinkers are developers' (Conclusion II is unconditionally true)."
+        },
+        {
+          "id": "tcs_rea_03",
+          "text": "Point P is 15m south of Point Q. Point R is 20m east of Point P. Point S is 15m north of Point R. What is the distance between Point Q and Point S?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["20 meters", "15 meters", "25 meters", "35 meters"],
+          "correctAnswer": 0,
+          "explanation": "Points form a rectangle (QP=15, PR=20, RS=15). Therefore, QS = PR = 20 meters."
+        },
+        {
+          "id": "tcs_rea_04",
+          "text": "Introducing a boy, a girl said, 'He is the son of the daughter of the father of my maternal uncle.' How is the boy related to the girl?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Brother or Cousin", "Uncle", "Nephew", "Father"],
+          "correctAnswer": 0,
+          "explanation": "Father of maternal uncle = Maternal Grandfather. Daughter of maternal grandfather = Mother or aunt. Son = Brother or Cousin."
+        },
+        {
+          "id": "tcs_rea_05",
+          "text": "Find the missing term in the sequence: 4, 18, 48, 100, 180, ?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["294", "280", "312", "274"],
+          "correctAnswer": 0,
+          "explanation": "Formula: n^3 - n^2 for n=2,3,4,5,6,7. 7^3 - 7^2 = 343 - 49 = 294."
+        },
+        {
+          "id": "tcs_rea_06",
+          "text": "In a row of 40 students facing North, Amit is 13th from the left end and Sumit is 17th from the right end. How many students are seated between Amit and Sumit?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["10", "11", "9", "12"],
+          "correctAnswer": 0,
+          "explanation": "Total = 40. Sum of positions = 13 + 17 = 30. Students between = 40 - 30 = 10."
+        },
+        {
+          "id": "tcs_rea_07",
+          "text": "If '+' means multiplication, '-' means division, '*' means addition, and '/' means subtraction, what is the value of: 36 - 4 + 7 * 8 / 11 ?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["60", "56", "72", "48"],
+          "correctAnswer": 0,
+          "explanation": "(36 / 4) * 7 + 8 - 11 = 9 * 7 + 8 - 11 = 63 + 8 - 11 = 60."
+        },
+        {
+          "id": "tcs_rea_08",
+          "text": "Select the related word pair: ARCHITECT : BUILDING :: ?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Sculptor : Statue", "Doctor : Hospital", "Teacher : School", "Judge : Court"],
+          "correctAnswer": 0,
+          "explanation": "An architect creates/designs a building; similarly, a sculptor creates a statue."
+        },
+        {
+          "id": "tcs_rea_09",
+          "text": "At what time between 4 o'clock and 5 o'clock will the hands of a clock be together (overlap)?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["21 (9/11) minutes past 4", "22 minutes past 4", "20 (5/11) minutes past 4", "21 minutes past 4"],
+          "correctAnswer": 0,
+          "explanation": "Minute angle = (60/11) * 4 = 240 / 11 = 21 (9/11) minutes past 4."
+        },
+        {
+          "id": "tcs_rea_10",
+          "text": "Statements:\nSome keys are locks.\nAll locks are doors.\nConclusions:\nI. Some keys are doors.\nII. All doors are locks.",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Only I follows", "Only II follows", "Both I and II follow", "Neither follows"],
+          "correctAnswer": 0,
+          "explanation": "Some keys are locks + All locks are doors => Some keys are doors (I follows)."
+        },
+        {
+          "id": "tcs_rea_11",
+          "text": "If 'WATER' is written as 'YCVGT', how is 'FIRE' written?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["HKTG", "GJSF", "HLTH", "IKTG"],
+          "correctAnswer": 0,
+          "explanation": "Each letter is shifted forward by +2: F+2=H, I+2=K, R+2=T, E+2=G -> HKTG."
+        },
+        {
+          "id": "tcs_rea_12",
+          "text": "A man walks 6 km South, turns left and walks 4 km, then turns left and walks 6 km. In which direction is he from the starting point?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["East", "West", "North", "South"],
+          "correctAnswer": 0,
+          "explanation": "The South and North movements cancel each other. He is 4 km due East."
+        },
+        {
+          "id": "tcs_rea_13",
+          "text": "Which number does not belong to the standard cube sequence? 27, 64, 125, 216, 343, 512, 729, 1000",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["All belong to the sequence", "27 is odd", "729 is square", "None"],
+          "correctAnswer": 0,
+          "explanation": "All numbers are perfect cubes from 3^3 to 10^3."
+        },
+        {
+          "id": "tcs_rea_14",
+          "text": "If 1st January 2004 was a Thursday, what day of the week was 1st January 2005?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Saturday", "Friday", "Sunday", "Thursday"],
+          "correctAnswer": 0,
+          "explanation": "2004 is a leap year with 2 odd days. Thursday + 2 = Saturday."
+        },
+        {
+          "id": "tcs_rea_15",
+          "text": "Find the odd one out among: (A) Copper (B) Silver (C) Platinum (D) Brass",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["Brass", "Copper", "Silver", "Platinum"],
+          "correctAnswer": 0,
+          "explanation": "Brass is an alloy; Copper, Silver, and Platinum are pure chemical elements."
+        },
+        {
+          "id": "tcs_rea_16",
+          "text": "Pointing to a photograph, a man says: 'I have no brother or sister, but that man's father is my father's son.' Whose photograph is it?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["His son's", "His father's", "His own", "His nephew's"],
+          "correctAnswer": 0,
+          "explanation": "'My father's son' = speaker. Speaker is that man's father => His son's photo."
+        },
+        {
+          "id": "tcs_rea_17",
+          "text": "Complete the letter series: AB, DEF, HIJK, ?, STUVWX",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["MNOPQ", "NOPQR", "LMNO", "MNOPT"],
+          "correctAnswer": 0,
+          "explanation": "Sequence increments by 1 letter and skips 1 letter in between -> MNOPQ."
+        },
+        {
+          "id": "tcs_rea_18",
+          "text": "Arrange the words in a logical order: 1. Application 2. Selection 3. Exam 4. Interview 5. Offer Letter",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["1, 3, 4, 2, 5", "1, 2, 3, 4, 5", "1, 4, 3, 2, 5", "3, 1, 4, 2, 5"],
+          "correctAnswer": 0,
+          "explanation": "Sequence: Application -> Exam -> Interview -> Selection -> Offer Letter (1, 3, 4, 2, 5)."
+        },
+        {
+          "id": "tcs_rea_19",
+          "text": "If South-East becomes North, North-East becomes West and so on, what will West become?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["South-East", "North-East", "South-West", "North-West"],
+          "correctAnswer": 0,
+          "explanation": "Rotated 135 degrees counter-clockwise. West becomes South-East."
+        },
+        {
+          "id": "tcs_rea_20",
+          "text": "How many triangles are there in a square with both diagonals connected?",
+          "marks": 2,
+          "negativeMarks": 0.5,
+          "options": ["8", "6", "10", "4"],
+          "correctAnswer": 0,
+          "explanation": "4 small triangles + 4 large composite triangles = 8 triangles."
+        }
+      ]
+    },
+    {
+      "id": "tcs_sec_verbal",
+      "name": "Verbal Ability",
+      "timeLimitMinutes": 25,
+      "questions": [
+        {
+          "id": "tcs_vrb_01",
+          "text": "Select the correct antonym of the word: 'CANDID'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Deceptive", "Frank", "Honest", "Direct"],
+          "correctAnswer": 0,
+          "explanation": "'Candid' means frank/honest. Antonym is 'Deceptive'."
+        },
+        {
+          "id": "tcs_vrb_02",
+          "text": "Choose the correctly spelled word:",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Accommodate", "Acommodate", "Accomodate", "Acomodate"],
+          "correctAnswer": 0,
+          "explanation": "The correct spelling is ACCOMMODATE."
+        },
+        {
+          "id": "tcs_vrb_03",
+          "text": "Fill in the blank: The committee ________ agreed to adopt the new environmental charter.",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["unanimously", "unanimous", "unanimousness", "unanimity"],
+          "correctAnswer": 0,
+          "explanation": "The adverb 'unanimously' is required to modify 'agreed'."
+        },
+        {
+          "id": "tcs_vrb_04",
+          "text": "Identify the error part: 'Neither the manager (A) / nor the employees (B) / was present at the meeting (C) / No Error (D)'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Part (C)", "Part (A)", "Part (B)", "Part (D)"],
+          "correctAnswer": 0,
+          "explanation": "Verb must agree with plural 'employees' -> 'were present'."
+        },
+        {
+          "id": "tcs_vrb_05",
+          "text": "What is the meaning of the idiom: 'To spill the beans'?",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["To reveal a secret prematurely", "To waste food", "To cause an accident", "To celebrate"],
+          "correctAnswer": 0,
+          "explanation": "To reveal a secret prematurely."
+        },
+        {
+          "id": "tcs_vrb_06",
+          "text": "Select the synonym of 'PRAGMATIC':",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Practical", "Idealistic", "Theoretical", "Arrogant"],
+          "correctAnswer": 0,
+          "explanation": "'Pragmatic' means dealing with things sensibly and realistically; practical."
+        },
+        {
+          "id": "tcs_vrb_07",
+          "text": "Choose the correct sentence in passive voice for: 'The chef prepared a gourmet meal.'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["A gourmet meal was prepared by the chef.", "A gourmet meal has been prepared by the chef.", "A gourmet meal is prepared by the chef.", "A gourmet meal was being prepared by the chef."],
+          "correctAnswer": 0,
+          "explanation": "Past simple active becomes 'was + past participle'."
+        },
+        {
+          "id": "tcs_vrb_08",
+          "text": "One who knows everything is called:",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Omniscient", "Omnipotent", "Omnipresent", "Polyglot"],
+          "correctAnswer": 0,
+          "explanation": "Omniscient = all-knowing."
+        },
+        {
+          "id": "tcs_vrb_09",
+          "text": "Fill in the preposition: He is capable ________ solving complex mathematical equations.",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["of", "to", "for", "with"],
+          "correctAnswer": 0,
+          "explanation": "'Capable' takes the preposition 'of'."
+        },
+        {
+          "id": "tcs_vrb_10",
+          "text": "Identify the antonym of 'OBSOLETE':",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Contemporary", "Ancient", "Outdated", "Archaic"],
+          "correctAnswer": 0,
+          "explanation": "'Obsolete' means no longer produced or used. Antonym is 'Contemporary' / 'Modern'."
+        },
+        {
+          "id": "tcs_vrb_11",
+          "text": "Choose the correct word: The government introduced strict ________ to control environmental emissions.",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["regulations", "regulates", "regulatory", "regulating"],
+          "correctAnswer": 0,
+          "explanation": "Noun 'regulations' is the required object."
+        },
+        {
+          "id": "tcs_vrb_12",
+          "text": "What is the meaning of 'A blessing in disguise'?",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["An apparent misfortune that yields unexpected good results", "A hidden danger", "A spiritual miracle", "A fake praise"],
+          "correctAnswer": 0,
+          "explanation": "Something that seems bad at first, but turns out to be good."
+        },
+        {
+          "id": "tcs_vrb_13",
+          "text": "Select the correct plural form of 'CRITERION':",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Criteria", "Criterions", "Criterias", "Criteriones"],
+          "correctAnswer": 0,
+          "explanation": "Plural of criterion is criteria."
+        },
+        {
+          "id": "tcs_vrb_14",
+          "text": "Find the correctly spelled word:",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Bureaucracy", "Beurocracy", "Bureaucrasy", "Burocracy"],
+          "correctAnswer": 0,
+          "explanation": "Correct spelling: BUREAUCRACY."
+        },
+        {
+          "id": "tcs_vrb_15",
+          "text": "Fill in the blank: If she ________ harder, she would have cleared the assessment.",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["had studied", "studied", "has studied", "would study"],
+          "correctAnswer": 0,
+          "explanation": "Third conditional: If + past perfect, would have + past participle."
+        },
+        {
+          "id": "tcs_vrb_16",
+          "text": "Identify the figure of speech in: 'The wind whispered through the dark trees.'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Personification", "Simile", "Metaphor", "Hyperbole"],
+          "correctAnswer": 0,
+          "explanation": "Attributing human actions (whispering) to non-human elements is Personification."
+        },
+        {
+          "id": "tcs_vrb_17",
+          "text": "Choose the most appropriate synonym for 'EPHEMERAL':",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Transient", "Permanent", "Eternal", "Enduring"],
+          "correctAnswer": 0,
+          "explanation": "'Ephemeral' means lasting for a very short time; transient."
+        },
+        {
+          "id": "tcs_vrb_18",
+          "text": "Choose the sentence with correct punctuation:",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Although it was raining, we decided to go hiking.", "Although it was raining we decided, to go hiking.", "Although, it was raining we decided to go hiking.", "Although it was raining; we decided to go hiking."],
+          "correctAnswer": 0,
+          "explanation": "Comma separates the introductory dependent clause."
+        },
+        {
+          "id": "tcs_vrb_19",
+          "text": "A person who loves books and reading is known as:",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Bibliophile", "Philanthropist", "Polyglot", "Misologist"],
+          "correctAnswer": 0,
+          "explanation": "Bibliophile = book lover."
+        },
+        {
+          "id": "tcs_vrb_20",
+          "text": "Complete the idiom: 'Barking up the wrong ________'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["tree", "dog", "house", "fence"],
+          "correctAnswer": 0,
+          "explanation": "'Barking up the wrong tree' means pursuing a mistaken line of thought."
+        },
+        {
+          "id": "tcs_vrb_21",
+          "text": "Select the antonym for 'BENEVOLENT':",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["Malevolent", "Generous", "Kind", "Altruistic"],
+          "correctAnswer": 0,
+          "explanation": "'Benevolent' (well-meaning) antonym is 'Malevolent' (spiteful/harmful)."
+        },
+        {
+          "id": "tcs_vrb_22",
+          "text": "Choose the correct indirect speech for: He said, 'I am working on a new software architecture.'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["He said that he was working on a new software architecture.", "He said that he is working on a new software architecture.", "He told he was working on a new software architecture.", "He said he has been working on a new software architecture."],
+          "correctAnswer": 0,
+          "explanation": "Present continuous changes to past continuous ('was working')."
+        },
+        {
+          "id": "tcs_vrb_23",
+          "text": "Identify the incorrect word: 'The principal reason for his success was his perseverence.'",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["perseverence (should be perseverance)", "principal", "success", "No error"],
+          "correctAnswer": 0,
+          "explanation": "Spelling is perseverance (ends in 'ance')."
+        },
+        {
+          "id": "tcs_vrb_24",
+          "text": "Fill in the blank: Neither of the two candidates ________ suitable for the role.",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["is", "are", "were", "have been"],
+          "correctAnswer": 0,
+          "explanation": "'Neither of' takes a singular verb in standard formal English."
+        },
+        {
+          "id": "tcs_vrb_25",
+          "text": "What does 'Call it a day' mean?",
+          "marks": 1,
+          "negativeMarks": 0.33,
+          "options": ["To stop working on something for the day", "To start a new project", "To schedule a meeting", "To declare a holiday"],
+          "correctAnswer": 0,
+          "explanation": "To stop what you are doing because you have done enough or are tired."
+        }
+      ]
+    }
+  ]
+}

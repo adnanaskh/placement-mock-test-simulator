@@ -1,0 +1,542 @@
+{
+  "_ai_instructions": {
+    "IMPORTANT_FOR_AI": "CRITICAL INSTRUCTIONS FOR AI QUESTION GENERATOR:",
+    "RULE_1_DO_NOT_CHANGE_IDS": "DO NOT modify any section IDs ('id': 'inf_sec_...') or question IDs ('id': 'inf_rea_...', 'inf_math_...', 'inf_vrb_...', 'inf_ps_...', 'inf_puz_...'). All IDs must remain strictly unchanged.",
+    "RULE_2_DO_NOT_CHANGE_STRUCTURE": "DO NOT change the schema structure, section names, time limits, or JSON keys.",
+    "RULE_3_WHAT_YOU_CAN_MODIFY": "You may ONLY modify the contents of 'text', 'options' (array of 4 strings), 'correctAnswer' (0-indexed integer: 0 for A, 1 for B, 2 for C, 3 for D), and 'explanation'.",
+    "RULE_4_FORMATTING": "Use markdown ```c, ```java, ```python, or ```text for code blocks and `code` for inline identifiers.",
+    "RULE_5_VALIDATION": "Return ONLY the valid raw JSON object without conversational markdown text."
+  },
+  "title": "Infosys Specialist Programmer & System Engineer Assessment Mock",
+  "company": "Infosys Limited",
+  "presetName": "Infosys Campus Assessment Pattern",
+  "theme": "infosys",
+  "totalTimeMinutes": 100,
+  "sectionalTiming": true,
+  "passingCutoffPercentage": 70,
+  "negativeMarking": false,
+  "allowCalculator": false,
+  "sections": [
+    {
+      "id": "inf_sec_reasoning",
+      "name": "Reasoning Ability",
+      "timeLimitMinutes": 25,
+      "questions": [
+        {
+          "id": "inf_rea_01",
+          "text": "In a certain code language, 'ROAD' is written as 'URDG'. How will 'SWAN' be written in that code?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["VZDQ", "VZCQ", "UXDQ", "VYDQ"],
+          "correctAnswer": 0,
+          "explanation": "Each letter is shifted forward by 3 positions: R+3=U, O+3=R, A+3=D, D+3=G. For SWAN: S+3=V, W+3=Z, A+3=D, N+3=Q -> VZDQ."
+        },
+        {
+          "id": "inf_rea_02",
+          "text": "Statements:\n1. All windows are doors.\n2. No door is a wall.\nConclusions:\nI. No window is a wall.\nII. No wall is a door.",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Both I and II follow", "Only I follows", "Only II follows", "Neither follows"],
+          "correctAnswer": 0,
+          "explanation": "Windows are inside doors, and doors have zero intersection with walls. Hence both follow."
+        },
+        {
+          "id": "inf_rea_03",
+          "text": "Look at this series: 7, 10, 8, 11, 9, 12, ... What number should come next?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["10", "13", "14", "11"],
+          "correctAnswer": 0,
+          "explanation": "Alternating pattern: +3, -2, +3, -2, +3, -2. Next term is 12 - 2 = 10."
+        },
+        {
+          "id": "inf_rea_04",
+          "text": "Pointing to a photograph of a girl, Raj said, 'Her mother's brother is the only son of my mother's father.' How is the girl's mother related to Raj?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Mother or Maternal Aunt", "Sister", "Grandmother", "Daughter"],
+          "correctAnswer": 0,
+          "explanation": "Only son of my mother's father = maternal uncle. If girl's mother's brother is Raj's maternal uncle, girl's mother is Raj's mother/aunt."
+        },
+        {
+          "id": "inf_rea_05",
+          "text": "If South-West becomes North, what will North-East become?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["South", "East", "West", "North-West"],
+          "correctAnswer": 0,
+          "explanation": "South-West and North-East are opposite (180 deg). Opposite of North is South."
+        },
+        {
+          "id": "inf_rea_06",
+          "text": "Five executives P, Q, R, S, T sit in a row facing North. S is between T and Q. Q is to immediate left of R. P is to immediate left of T. Who is in the middle?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["S", "T", "Q", "R"],
+          "correctAnswer": 0,
+          "explanation": "Arrangement from left to right: P, T, S, Q, R. Middle is S."
+        },
+        {
+          "id": "inf_rea_07",
+          "text": "Find the odd one out: 396, 462, 572, 427, 671, 264",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["427", "396", "572", "671"],
+          "correctAnswer": 0,
+          "explanation": "In all others, middle digit = sum of outer digits (3+6=9, 4+2=6, 5+2=7, 6+1=7). In 427, 4+7 = 11 != 2."
+        },
+        {
+          "id": "inf_rea_08",
+          "text": "Which word does NOT belong with the others? (A) Tulip (B) Rose (C) Bud (D) Daisy",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Bud", "Tulip", "Rose", "Daisy"],
+          "correctAnswer": 0,
+          "explanation": "Tulip, Rose, Daisy are specific flowers; bud is a growth stage."
+        },
+        {
+          "id": "inf_rea_09",
+          "text": "In a code, 253 means 'books are old', 546 means 'man is old' and 378 means 'buy good books'. What digit stands for 'are'?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["2", "5", "3", "6"],
+          "correctAnswer": 0,
+          "explanation": "'old' = 5, 'books' = 3. Therefore 'are' = 2."
+        },
+        {
+          "id": "inf_rea_10",
+          "text": "How many 4's are in the sequence preceded by 7 and not followed by 3? Sequence: 5 9 3 2 1 7 4 2 6 9 7 4 6 1 3 2 8 7 4 3 1",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["2", "3", "1", "4"],
+          "correctAnswer": 0,
+          "explanation": "7 4 2 (Valid), 7 4 6 (Valid), 7 4 3 (Invalid). Count = 2."
+        },
+        {
+          "id": "inf_rea_11",
+          "text": "If A + B means A is brother of B; A - B means A is sister of B; A * B means A is father of B. Which shows C is son of M?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["M * C + N", "M * C - N", "C + M * N", "M - C + N"],
+          "correctAnswer": 0,
+          "explanation": "M * C = M is father of C. C + N = C is brother (male). Hence C is son of M."
+        },
+        {
+          "id": "inf_rea_12",
+          "text": "A clock is started at noon. By 10 minutes past 5, the hour hand has turned through:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["155 degrees", "145 degrees", "150 degrees", "160 degrees"],
+          "correctAnswer": 0,
+          "explanation": "Hour hand moves 0.5 deg/min. 310 mins * 0.5 = 155 degrees."
+        },
+        {
+          "id": "inf_rea_13",
+          "text": "Find the missing term in the sequence: 6, 12, 21, 33, ?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["48", "45", "46", "50"],
+          "correctAnswer": 0,
+          "explanation": "+6, +9, +12, +15. 33 + 15 = 48."
+        },
+        {
+          "id": "inf_rea_14",
+          "text": "Statements: Most architects are creative. All creative people are observant.\nConclusions: I. Some architects are observant. II. Some observant people are creative.",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Both I and II follow", "Only I follows", "Only II follows", "Neither follows"],
+          "correctAnswer": 0,
+          "explanation": "Both conclusions logically follow."
+        },
+        {
+          "id": "inf_rea_15",
+          "text": "An accurate clock shows 8 o'clock in morning. How many degrees does the hour hand rotate when it shows 2 o'clock in afternoon?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["180 degrees", "150 degrees", "160 degrees", "210 degrees"],
+          "correctAnswer": 0,
+          "explanation": "6 hours * 30 degrees/hour = 180 degrees."
+        }
+      ]
+    },
+    {
+      "id": "inf_sec_math",
+      "name": "Mathematical Ability",
+      "timeLimitMinutes": 35,
+      "questions": [
+        {
+          "id": "inf_math_01",
+          "text": "If 12 men or 18 women can reap a field in 14 days, how many days will 8 men and 16 women take to reap the same field?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["9 days", "10 days", "12 days", "8 days"],
+          "correctAnswer": 0,
+          "explanation": "12 Men = 18 Women => 1 Man = 1.5 Women. 8M + 16W = 28W. Days = (18 * 14) / 28 = 9 days."
+        },
+        {
+          "id": "inf_math_02",
+          "text": "A train running at 72 km/h crosses a 260m long platform in 23 seconds. What is the length of the train in meters?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["200 meters", "240 meters", "180 meters", "220 meters"],
+          "correctAnswer": 0,
+          "explanation": "Speed = 20 m/s. Distance = 20 * 23 = 460m. Train length = 460 - 260 = 200m."
+        },
+        {
+          "id": "inf_math_03",
+          "text": "Find the compound interest on Rs. 16,000 at 20% per annum for 9 months, compounded quarterly.",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["Rs. 2,522", "Rs. 2,400", "Rs. 2,640", "Rs. 2,500"],
+          "correctAnswer": 0,
+          "explanation": "Rate = 5% per quarter, 3 quarters. CI = 16000 * ((1.05)^3 - 1) = Rs. 2,522."
+        },
+        {
+          "id": "inf_math_04",
+          "text": "A bag contains 6 black and 8 white balls. One ball is drawn at random. What is the probability that the ball drawn is white?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["4/7", "3/7", "1/8", "3/4"],
+          "correctAnswer": 0,
+          "explanation": "Total balls = 14. White = 8. Probability = 8/14 = 4/7."
+        },
+        {
+          "id": "inf_math_05",
+          "text": "The ratio of length to breadth of a rectangular field is 3:2. If the perimeter is 80 meters, find the area in square meters.",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["384 sq.m", "400 sq.m", "360 sq.m", "420 sq.m"],
+          "correctAnswer": 0,
+          "explanation": "2(3x + 2x) = 80 => x = 8. L = 24, B = 16. Area = 24 * 16 = 384 sq.m."
+        },
+        {
+          "id": "inf_math_06",
+          "text": "A can do a work in 15 days and B in 20 days. If they work on it together for 4 days, then the fraction of the work that is left is:",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["8/15", "7/15", "1/15", "2/5"],
+          "correctAnswer": 0,
+          "explanation": "4 days work = 4 * (1/15 + 1/20) = 4 * (7/60) = 7/15. Left = 1 - 7/15 = 8/15."
+        },
+        {
+          "id": "inf_math_07",
+          "text": "A man buys a cycle for Rs. 1,400 and sells it at a loss of 15%. What is the selling price of the cycle?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["Rs. 1,190", "Rs. 1,200", "Rs. 1,160", "Rs. 1,210"],
+          "correctAnswer": 0,
+          "explanation": "SP = 1400 * 0.85 = Rs. 1,190."
+        },
+        {
+          "id": "inf_math_08",
+          "text": "The average of 20 numbers is zero. Of them, at the most, how many may be greater than zero?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["19", "20", "1", "10"],
+          "correctAnswer": 0,
+          "explanation": "19 positive numbers can be offset by 1 large negative number to sum to 0."
+        },
+        {
+          "id": "inf_math_09",
+          "text": "If log(x) + log(y) = log(x + y), then y can be expressed as:",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["x / (x - 1)", "x / (x + 1)", "(x - 1) / x", "x - 1"],
+          "correctAnswer": 0,
+          "explanation": "xy = x + y => y(x - 1) = x => y = x / (x - 1)."
+        },
+        {
+          "id": "inf_math_10",
+          "text": "Two numbers are in the ratio 3:5. If 9 is subtracted from each, the new numbers are in the ratio 12:23. The smaller number is:",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["33", "27", "45", "55"],
+          "correctAnswer": 0,
+          "explanation": "(3x - 9)/(5x - 9) = 12/23 => 69x - 207 = 60x - 108 => 9x = 99 => x = 11. Smaller = 3 * 11 = 33."
+        }
+      ]
+    },
+    {
+      "id": "inf_sec_verbal",
+      "name": "Verbal Ability",
+      "timeLimitMinutes": 20,
+      "questions": [
+        {
+          "id": "inf_vrb_01",
+          "text": "Choose the word most nearly OPPOSITE in meaning to 'METICULOUS':",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Careless", "Painstaking", "Diligent", "Fastidious"],
+          "correctAnswer": 0,
+          "explanation": "'Meticulous' means highly attentive to detail. Antonym is 'Careless'."
+        },
+        {
+          "id": "inf_vrb_02",
+          "text": "Choose the synonym for 'ELOQUENT':",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Articulate", "Timid", "Confused", "Silent"],
+          "correctAnswer": 0,
+          "explanation": "Eloquent means fluent or persuasive in speaking; articulate."
+        },
+        {
+          "id": "inf_vrb_03",
+          "text": "Identify the correct preposition: She has been living in this city ________ 2018.",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["since", "for", "from", "at"],
+          "correctAnswer": 0,
+          "explanation": "A specific starting point in time uses 'since'."
+        },
+        {
+          "id": "inf_vrb_04",
+          "text": "Select the correctly spelled word:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Maintenance", "Maintainance", "Maintanence", "Maintenence"],
+          "correctAnswer": 0,
+          "explanation": "Correct spelling: MAINTENANCE."
+        },
+        {
+          "id": "inf_vrb_05",
+          "text": "What does the idiom 'Hit the nail on the head' mean?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["To describe exactly what is causing a situation", "To injure oneself accidentally", "To construct wooden furniture", "To fail completely"],
+          "correctAnswer": 0,
+          "explanation": "To state or do something that is exactly right."
+        },
+        {
+          "id": "inf_vrb_06",
+          "text": "Fill in the blank: The team was congratulated for ________ outstanding quarterly performance.",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["its", "it's", "their", "there"],
+          "correctAnswer": 0,
+          "explanation": "Possessive pronoun for collective noun team is 'its'."
+        },
+        {
+          "id": "inf_vrb_07",
+          "text": "Find the error part: 'Each of the students (A) / have submitted their assignment (B) / on time (C) / No Error (D)'",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Part (B)", "Part (A)", "Part (C)", "Part (D)"],
+          "correctAnswer": 0,
+          "explanation": "'Each of' takes a singular verb -> 'has submitted'."
+        },
+        {
+          "id": "inf_vrb_08",
+          "text": "Select the antonym for 'TACITURN':",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Loquacious", "Reserved", "Silent", "Rude"],
+          "correctAnswer": 0,
+          "explanation": "'Taciturn' (uncommunicative/silent) antonym is 'Loquacious' (talkative)."
+        },
+        {
+          "id": "inf_vrb_09",
+          "text": "One who renounces a religious or political belief is called:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Apostate", "Altruist", "Ascetic", "Agnostic"],
+          "correctAnswer": 0,
+          "explanation": "Apostate = person who renounces a belief."
+        },
+        {
+          "id": "inf_vrb_10",
+          "text": "Choose the correct sentence:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["She prefers coffee to tea.", "She prefers coffee than tea.", "She prefers coffee more than tea.", "She prefers coffee over tea."],
+          "correctAnswer": 0,
+          "explanation": "'Prefer' is idiomatically followed by 'to'."
+        },
+        {
+          "id": "inf_vrb_11",
+          "text": "Select the synonym of 'LUCID':",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Clear", "Murky", "Vague", "Turbid"],
+          "correctAnswer": 0,
+          "explanation": "Lucid means expressed clearly; easy to understand."
+        },
+        {
+          "id": "inf_vrb_12",
+          "text": "Choose the correct passive voice: 'The committee approved the budget.'",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["The budget was approved by the committee.", "The budget had been approved by the committee.", "The budget is approved by the committee.", "The budget has been approved by the committee."],
+          "correctAnswer": 0,
+          "explanation": "Past simple active -> 'was approved'."
+        },
+        {
+          "id": "inf_vrb_13",
+          "text": "Find the correctly spelled word:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Conscientious", "Consciencious", "Conscensious", "Conscientous"],
+          "correctAnswer": 0,
+          "explanation": "Correct spelling: CONSCIENTIOUS."
+        },
+        {
+          "id": "inf_vrb_14",
+          "text": "Fill in the blank: Neither the teacher nor the students ________ present in the laboratory.",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["were", "was", "is", "has been"],
+          "correctAnswer": 0,
+          "explanation": "In 'Neither...nor', verb agrees with closer subject ('students' plural -> were)."
+        },
+        {
+          "id": "inf_vrb_15",
+          "text": "What is the meaning of 'To burn the midnight oil'?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["To work or study late into the night", "To waste energy resources", "To cook food at night", "To destroy property"],
+          "correctAnswer": 0,
+          "explanation": "To study or work late into the night."
+        },
+        {
+          "id": "inf_vrb_16",
+          "text": "Select the antonym for 'CANDOR':",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Deceit", "Frankness", "Honesty", "Sincerity"],
+          "correctAnswer": 0,
+          "explanation": "Candor = honesty. Antonym = Deceit."
+        },
+        {
+          "id": "inf_vrb_17",
+          "text": "A person who is fluent in two languages is called:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Bilingual", "Monoglot", "Polyglot", "Linguist"],
+          "correctAnswer": 0,
+          "explanation": "Bilingual = speaking two languages."
+        },
+        {
+          "id": "inf_vrb_18",
+          "text": "Choose the correct spelling:",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Entrepreneur", "Entreprenur", "Entrepranuer", "Enterpreneur"],
+          "correctAnswer": 0,
+          "explanation": "Correct spelling: ENTREPRENEUR."
+        },
+        {
+          "id": "inf_vrb_19",
+          "text": "Fill in the blank: The company decided to ________ the annual conference until next month.",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["postpone", "cancel", "terminate", "dismiss"],
+          "correctAnswer": 0,
+          "explanation": "'Until next month' implies rescheduling/delaying -> postpone."
+        },
+        {
+          "id": "inf_vrb_20",
+          "text": "What is the meaning of 'Piece of cake'?",
+          "marks": 1,
+          "negativeMarks": 0,
+          "options": ["Very easy task", "Sweet treat", "Complicated puzzle", "Expensive item"],
+          "correctAnswer": 0,
+          "explanation": "Something very easy to do."
+        }
+      ]
+    },
+    {
+      "id": "inf_sec_pseudocode",
+      "name": "Pseudocode",
+      "timeLimitMinutes": 10,
+      "questions": [
+        {
+          "id": "inf_ps_01",
+          "text": "What is the output for `p = 8, q = 3, r = 2`?\n\n```text\nfunction solve(p, q, r):\n    for each counter from 1 to 2:\n        p = p ^ q\n        q = q + r\n    return p + q + r\n```",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["23", "25", "21", "19"],
+          "correctAnswer": 0,
+          "explanation": "Iter 1: p = 8^3 = 11, q = 3+2=5. Iter 2: p = 11^5 = 14, q = 5+2=7. Return 14 + 7 + 2 = 23."
+        },
+        {
+          "id": "inf_ps_02",
+          "text": "Predict the value of `sum` after execution:\n\n```text\ninteger a = 1, b = 2, sum = 0\nwhile (a <= 5):\n    sum = sum + (a * b)\n    a = a + 2\n    b = b + 1\nend while\n```",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["31", "30", "42", "28"],
+          "correctAnswer": 0,
+          "explanation": "Iter 1: a=1,b=2 -> sum=2; a=3,b=3. Iter 2: a=3,b=3 -> sum=11; a=5,b=4. Iter 3: a=5,b=4 -> sum=31; a=7,b=5 (exit). sum=31."
+        },
+        {
+          "id": "inf_ps_03",
+          "text": "What will be returned by `rec(4)`?\n\n```text\nfunction rec(n):\n    if (n <= 1) return 1\n    return n * rec(n - 1) + 1\n```",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["41", "64", "49", "25"],
+          "correctAnswer": 0,
+          "explanation": "rec(1)=1, rec(2)=2*1+1=3, rec(3)=3*3+1=10, rec(4)=4*10+1=41."
+        },
+        {
+          "id": "inf_ps_04",
+          "text": "Which operation is performed in O(1) time in a doubly linked list given the target pointer?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["Node deletion", "Search by value", "Sorting", "Finding median"],
+          "correctAnswer": 0,
+          "explanation": "Direct pointer deletion is O(1) in a Doubly Linked List."
+        },
+        {
+          "id": "inf_ps_05",
+          "text": "What is the worst-case space complexity of recursive Depth First Search on a tree with N nodes and height H?",
+          "marks": 2,
+          "negativeMarks": 0,
+          "options": ["O(H)", "O(N)", "O(1)", "O(N^2)"],
+          "correctAnswer": 0,
+          "explanation": "Bounded by recursion call stack height H -> O(H)."
+        }
+      ]
+    },
+    {
+      "id": "inf_sec_puzzles",
+      "name": "Puzzle Solving",
+      "timeLimitMinutes": 10,
+      "questions": [
+        {
+          "id": "inf_puz_01",
+          "text": "You have 8 identical balls, 1 of which is slightly heavier. What is the minimum number of weighings on a balance scale to guarantee finding the heavier ball?",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["2", "3", "4", "1"],
+          "correctAnswer": 0,
+          "explanation": "Divide into groups of 3, 3, 2. Weigh 3 vs 3. Max weighings = 2."
+        },
+        {
+          "id": "inf_puz_02",
+          "text": "A man has 3 pairs of black socks and 4 pairs of brown socks in a drawer in the dark. How many individual socks must he pull out to guarantee at least one matching pair?",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["3", "4", "5", "2"],
+          "correctAnswer": 0,
+          "explanation": "There are only 2 colors. 2 + 1 = 3 socks guarantee a matching pair."
+        },
+        {
+          "id": "inf_puz_03",
+          "text": "A snail is at the bottom of a 30-foot well. Each day it climbs up 3 feet and slips back 2 feet at night. How many days will it take to reach the top?",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["28 days", "30 days", "29 days", "27 days"],
+          "correctAnswer": 0,
+          "explanation": "Day 27: reaches 27 ft. Day 28: climbs 3 ft to 30 ft and exits without slipping."
+        },
+        {
+          "id": "inf_puz_04",
+          "text": "If two hours ago, it was as long after one o'clock in the afternoon as it was before one o'clock in the morning, what time is it now?",
+          "marks": 3,
+          "negativeMarks": 0,
+          "options": ["9:00 PM", "8:00 PM", "10:00 PM", "7:00 PM"],
+          "correctAnswer": 0,
+          "explanation": "Midpoint between 1:00 PM and 1:00 AM is 7:00 PM. Two hours later is 9:00 PM."
+        }
+      ]
+    }
+  ]
+}
