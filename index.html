@@ -268,6 +268,7 @@
         overallTimeRemaining: totalSec,
         timerInterval: null,
         tabSwitchCount: 0,
+        autoSubmittedDueToViolations: false,
         isCompleted: false
       };
     }
@@ -369,37 +370,72 @@
       }
     }
 
+    let lastViolationTimestamp = 0;
+
+    function handleProctorViolation(reason) {
+      if (STATE.view !== 'EXAM' || STATE.examState.isCompleted) return;
+
+      const now = Date.now();
+      if (now - lastViolationTimestamp < 1500) return; // Debounce simultaneous blur & visibilitychange
+      lastViolationTimestamp = now;
+
+      STATE.examState.tabSwitchCount = (STATE.examState.tabSwitchCount || 0) + 1;
+      const count = STATE.examState.tabSwitchCount;
+      saveSessionToStorage();
+
+      if (count >= 3) {
+        STATE.examState.autoSubmittedDueToViolations = true;
+        closeModal();
+        showToastNotification(`🚨 Exam auto-submitted: 3/3 proctoring violations reached!`, 'error');
+        submitExam();
+        return;
+      }
+
+      // Show strict modal warning for strikes 1 and 2
+      openModal('PROCTOR_WARNING');
+      showToastNotification(`⚠️ Proctoring Violation (${count}/3): Window focus lost / tab switched!`, 'error');
+    }
+
     function setupAntiCheatListeners() {
       window.addEventListener('blur', () => {
-        if (STATE.view === 'EXAM' && !STATE.examState.isCompleted) {
-          STATE.examState.tabSwitchCount++;
-          saveSessionToStorage();
-          showWarningToast(`⚠️ Tab switch detected (${STATE.examState.tabSwitchCount})`);
-        }
+        handleProctorViolation('blur');
       });
 
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden && STATE.view === 'EXAM' && !STATE.examState.isCompleted) {
-          STATE.examState.tabSwitchCount++;
-          saveSessionToStorage();
-          showWarningToast(`⚠️ Window focus lost`);
+        if (document.hidden) {
+          handleProctorViolation('visibilitychange');
         }
+      });
+
+      window.addEventListener('pagehide', () => {
+        handleProctorViolation('pagehide');
       });
     }
 
     function showToastNotification(msg, type = 'warning') {
       const toast = document.createElement('div');
-      const bgClass = type === 'success' 
-        ? 'bg-emerald-700 text-white border-emerald-800' 
-        : (type === 'info' 
-          ? 'bg-blue-700 text-white border-blue-800' 
-          : 'bg-red-700 text-white border-red-800');
-      const icon = type === 'success' ? 'check-circle' : (type === 'info' ? 'info' : 'alert-triangle');
-      toast.className = `fixed top-4 right-4 z-50 ${bgClass} font-semibold text-xs px-4 py-2.5 rounded shadow-lg border flex items-center gap-2 transition-all`;
+      let bgClass = 'bg-amber-600 text-white border-amber-700';
+      let icon = 'alert-triangle';
+
+      if (type === 'success') {
+        bgClass = 'bg-emerald-700 text-white border-emerald-800';
+        icon = 'check-circle';
+      } else if (type === 'info') {
+        bgClass = 'bg-blue-700 text-white border-blue-800';
+        icon = 'info';
+      } else if (type === 'error' || type === 'critical') {
+        bgClass = 'bg-red-700 text-white border-red-800';
+        icon = 'shield-alert';
+      }
+
+      toast.className = `fixed top-4 right-4 z-50 ${bgClass} font-semibold text-xs px-4 py-2.5 rounded shadow-xl border flex items-center gap-2 transition-all`;
       toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i><span>${msg}</span>`;
       document.body.appendChild(toast);
       lucide.createIcons();
-      setTimeout(() => toast.remove(), 4000);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
     }
 
     function showWarningToast(msg) {
@@ -1072,12 +1108,13 @@
             <h2 class="font-bold text-sm text-slate-900 border-b border-slate-200 pb-2">General Instructions</h2>
 
             <div class="text-xs text-slate-700 space-y-3 leading-relaxed">
-              <ul class="list-disc list-inside space-y-1 text-slate-600">
+              <ul class="list-disc list-inside space-y-1.5 text-slate-600">
                 <li>Total duration: <strong>${data.totalTimeMinutes} minutes</strong>.</li>
                 <li>Total questions: <strong>${totalQ} questions</strong> across ${data.sections.length} sections.</li>
-                <li>Qualifying score: <strong>70%</strong>.</li>
+                <li>Qualifying cutoff: <strong>70%</strong>.</li>
                 <li>${data.sectionalTiming ? 'Sectional timing is enabled.' : 'Flexible section switching is enabled.'}</li>
-                <li><strong>Early Section Submission:</strong> You can submit any section at any time when completed using the <strong>"Submit Section"</strong> button without waiting for the timer to expire.</li>
+                <li><strong>Section & Exam Submission:</strong> The submit button is conveniently located in the <strong>Question Palette panel (bottom-right)</strong>. You can submit sections early when completed.</li>
+                <li><strong class="text-red-700">Strict Anti-Cheat Proctoring:</strong> Switching tabs, minimizing the browser window, or losing window focus is strictly monitored. A maximum of <strong>2 warnings</strong> will be shown. On the <strong>3rd violation</strong>, the assessment will be <strong>automatically submitted immediately</strong>.</li>
               </ul>
 
               <!-- Palette -->
@@ -1176,17 +1213,6 @@
                   </div>
                 </div>
               </div>
-
-              ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? `
-                <button onclick="openModal('SUBMIT_SECTION_CONFIRM')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-2.5 py-1.5 rounded shadow transition flex items-center gap-1" title="Submit current section early">
-                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-200"></i>
-                  <span>Submit Section</span>
-                </button>
-              ` : ''}
-
-              <button onclick="openModal('SUBMIT_CONFIRM')" class="bg-red-700 hover:bg-red-800 text-white font-bold text-xs px-3 py-1.5 rounded shadow transition flex items-center gap-1">
-                <span>Submit Exam</span>
-              </button>
             </div>
           </header>
 
@@ -1219,13 +1245,6 @@
             </div>
 
             <div class="flex items-center gap-3 shrink-0">
-              ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? `
-                <button onclick="openModal('SUBMIT_SECTION_CONFIRM')" class="text-xs font-semibold px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 flex items-center gap-1.5 transition shadow-xs">
-                  <span>Submit Section</span>
-                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-                </button>
-              ` : ''}
-
               <div class="text-xs text-slate-600 font-medium hidden md:block">
                 Candidate: <strong class="text-slate-900">${STATE.candidate.name}</strong> (${STATE.candidate.regNo})
               </div>
@@ -1311,18 +1330,6 @@
                   <button onclick="saveAndNext()" class="px-4 py-1.5 rounded text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white transition">
                     Save & Next
                   </button>
-
-                  ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? `
-                    <button onclick="openModal('SUBMIT_SECTION_CONFIRM')" class="px-3.5 py-1.5 rounded text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white transition flex items-center gap-1 shadow-xs">
-                      <span>Submit Section</span>
-                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                    </button>
-                  ` : `
-                    <button onclick="openModal('SUBMIT_CONFIRM')" class="px-3.5 py-1.5 rounded text-xs font-bold bg-red-700 hover:bg-red-800 text-white transition flex items-center gap-1 shadow-xs">
-                      <span>Submit Exam</span>
-                      <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    </button>
-                  `}
                 </div>
               </div>
 
@@ -1434,6 +1441,23 @@
 
           <main class="max-w-4xl mx-auto w-full p-6 space-y-5 flex-1">
             
+            ${STATE.examState.autoSubmittedDueToViolations ? `
+              <div class="bg-red-50 border-2 border-red-500 rounded-lg p-4 flex items-start gap-3.5 text-red-950 shadow-sm no-print">
+                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0 border border-red-300">
+                  <i data-lucide="shield-alert" class="w-5 h-5 text-red-700"></i>
+                </div>
+                <div>
+                  <h3 class="text-xs font-black uppercase text-red-900 tracking-wide flex items-center gap-2">
+                    <span>Assessment Auto-Submitted - Proctoring Violation Limit Exceeded</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] bg-red-700 text-white font-bold">3 of 3 Strikes</span>
+                  </h3>
+                  <p class="text-xs text-red-800 mt-1 leading-relaxed">
+                    This test session was automatically terminated and submitted early because 3 proctoring violations (tab switches, minimizing the browser window, or loss of window focus) were detected.
+                  </p>
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Summary Header Card -->
             <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-4">
               
@@ -1449,6 +1473,7 @@
                   <div><strong>Date:</strong> ${STATE.examTimings.date || new Date().toLocaleDateString()}</div>
                   <div><strong>Timings:</strong> ${STATE.examTimings.startTime || '--:--'} to ${STATE.examTimings.endTime || '--:--'}</div>
                   <div><strong>Duration:</strong> ${data.totalTimeMinutes} Minutes</div>
+                  <div><strong>Proctoring Status:</strong> ${STATE.examState.tabSwitchCount > 0 ? `<span class="${STATE.examState.tabSwitchCount >= 3 ? 'text-red-700 font-bold' : 'text-amber-700 font-bold'}">${STATE.examState.tabSwitchCount} Violation(s)${STATE.examState.autoSubmittedDueToViolations ? ' [Auto-Submitted]' : ''}</span>` : '<span class="text-emerald-700 font-bold">Clean (0 Violations)</span>'}</div>
                 </div>
               </div>
 
@@ -1692,6 +1717,72 @@ I am providing you with an examination JSON structure. Your task is to modify OR
             </div>
           </div>
         `;
+      } else if (STATE.activeModal === 'PROCTOR_WARNING') {
+        const count = STATE.examState.tabSwitchCount || 1;
+        const strikesLeft = Math.max(0, 3 - count);
+        const isFinalWarning = count === 2;
+
+        modalRoot.innerHTML = `
+          <div class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 select-none">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden text-slate-800 border-2 border-red-600">
+              <div class="bg-red-700 text-white px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-8 h-8 rounded-full bg-red-900 flex items-center justify-center text-white shrink-0 border border-red-500">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-red-100"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-xs uppercase tracking-wide">Proctoring Violation Warning</h3>
+                    <p class="text-[10px] text-red-200">Security & Window Focus Alert</p>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded text-xs font-black bg-red-900 border border-red-500 text-white">
+                  Strike ${count} / 3
+                </span>
+              </div>
+
+              <div class="p-5 space-y-3.5 text-xs">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2.5 text-red-950">
+                  <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600 shrink-0 mt-0.5"></i>
+                  <div class="space-y-1 text-[11px] leading-relaxed">
+                    <p class="font-bold text-red-900 uppercase">
+                      ${isFinalWarning ? '🚨 FINAL WARNING BEFORE AUTO-SUBMISSION!' : '⚠️ TAB SWITCH / BROWSER DEFOCUS DETECTED'}
+                    </p>
+                    <p>
+                      Navigating away from the test portal, switching tabs, or minimizing the browser window is strictly monitored.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="space-y-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <div class="flex justify-between items-center text-[11px] font-bold text-slate-700">
+                    <span>Violation Strikes Count:</span>
+                    <span class="text-red-700 font-bold">${count} of 3 Strikes</span>
+                  </div>
+                  <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden flex">
+                    <div class="bg-red-600 h-full transition-all duration-300" style="width: ${(count / 3) * 100}%"></div>
+                  </div>
+                  <p class="text-[11px] font-medium ${isFinalWarning ? 'text-red-700 font-bold' : 'text-slate-600'}">
+                    ${isFinalWarning 
+                      ? '⚠️ Next violation (Strike 3) will IMMEDIATELY auto-submit your entire exam!' 
+                      : `You have ${strikesLeft} strike(s) remaining before automatic exam submission.`
+                    }
+                  </p>
+                </div>
+
+                <div class="text-[10px] text-slate-500 italic">
+                  Keep this window focused in fullscreen mode until your assessment is complete.
+                </div>
+              </div>
+
+              <div class="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+                <button onclick="closeModal(); requestFullscreenMode();" class="w-full py-2 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded transition shadow-sm flex items-center justify-center gap-1.5">
+                  <i data-lucide="check" class="w-4 h-4"></i>
+                  <span>I Understand & Resume Exam</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
       } else if (STATE.activeModal === 'INSTRUCTIONS') {
         modalRoot.innerHTML = `
           <div class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
@@ -1704,8 +1795,9 @@ I am providing you with an examination JSON structure. Your task is to modify OR
                 <p>1. <strong>Save & Next:</strong> Saves response and moves forward.</p>
                 <p>2. <strong>Clear Response:</strong> Clears current selection.</p>
                 <p>3. <strong>Mark for Review:</strong> Flags question for later review.</p>
-                <p>4. <strong>Submit Section:</strong> You can submit the current section at any time once completed without waiting for the timer to expire.</p>
-                <p>5. <strong>Passing Score:</strong> 70% required to qualify.</p>
+                <p>4. <strong>Submit Section / Assessment:</strong> Use the dedicated button at the bottom-right of the Question Palette to submit sections early or finalize the exam.</p>
+                <p>5. <strong>Strict Anti-Cheat:</strong> Tab switches or window defocus are tracked. After 3 strikes, the test is auto-submitted immediately.</p>
+                <p>6. <strong>Passing Cutoff:</strong> 70% required to qualify.</p>
               </div>
               <div class="p-2.5 bg-slate-50 border-t border-slate-200 text-right">
                 <button onclick="closeModal()" class="px-3 py-1 bg-slate-800 text-white text-xs font-bold rounded">Close</button>
