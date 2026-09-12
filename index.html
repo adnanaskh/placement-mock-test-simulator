@@ -387,13 +387,23 @@
       });
     }
 
-    function showWarningToast(msg) {
+    function showToastNotification(msg, type = 'warning') {
       const toast = document.createElement('div');
-      toast.className = 'fixed top-4 right-4 z-50 bg-red-700 text-white font-semibold text-xs px-4 py-2.5 rounded shadow-lg border border-red-800 flex items-center gap-2';
-      toast.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4"></i><span>${msg}</span>`;
+      const bgClass = type === 'success' 
+        ? 'bg-emerald-700 text-white border-emerald-800' 
+        : (type === 'info' 
+          ? 'bg-blue-700 text-white border-blue-800' 
+          : 'bg-red-700 text-white border-red-800');
+      const icon = type === 'success' ? 'check-circle' : (type === 'info' ? 'info' : 'alert-triangle');
+      toast.className = `fixed top-4 right-4 z-50 ${bgClass} font-semibold text-xs px-4 py-2.5 rounded shadow-lg border flex items-center gap-2 transition-all`;
+      toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i><span>${msg}</span>`;
       document.body.appendChild(toast);
       lucide.createIcons();
       setTimeout(() => toast.remove(), 4000);
+    }
+
+    function showWarningToast(msg) {
+      showToastNotification(msg, 'warning');
     }
 
     function requestFullscreenMode() {
@@ -464,17 +474,23 @@
       const curSec = STATE.assessmentData.sections[STATE.examState.currentSectionIdx];
       if (STATE.examState.currentQuestionIdx < curSec.questions.length - 1) {
         STATE.examState.currentQuestionIdx++;
+        markQuestionVisited(STATE.examState.currentSectionIdx, STATE.examState.currentQuestionIdx);
+        saveSessionToStorage();
+        renderApp();
       } else if (STATE.examState.currentSectionIdx < STATE.assessmentData.sections.length - 1) {
         if (!STATE.assessmentData.sectionalTiming) {
           STATE.examState.currentSectionIdx++;
           STATE.examState.currentQuestionIdx = 0;
+          markQuestionVisited(STATE.examState.currentSectionIdx, STATE.examState.currentQuestionIdx);
+          saveSessionToStorage();
+          renderApp();
         } else {
-          showWarningToast("Section locked until time expires or section is completed.");
+          openModal('SUBMIT_SECTION_CONFIRM');
         }
+      } else {
+        // Reached the end of the entire exam
+        openModal('SUBMIT_CONFIRM');
       }
-      markQuestionVisited(STATE.examState.currentSectionIdx, STATE.examState.currentQuestionIdx);
-      saveSessionToStorage();
-      renderApp();
     }
 
     function navigateToPrevQuestion() {
@@ -492,7 +508,7 @@
 
     function jumpToQuestion(secIdx, qIdx) {
       if (STATE.assessmentData.sectionalTiming && secIdx !== STATE.examState.currentSectionIdx) {
-        showWarningToast("Section navigation locked in this pattern.");
+        showWarningToast("Section navigation locked in this pattern. Use 'Submit Section' to proceed.");
         return;
       }
       STATE.examState.currentSectionIdx = secIdx;
@@ -504,7 +520,7 @@
 
     function switchSectionTab(secIdx) {
       if (STATE.assessmentData.sectionalTiming && secIdx !== STATE.examState.currentSectionIdx) {
-        showWarningToast("Section navigation locked in this pattern.");
+        showWarningToast("Section navigation locked in this pattern. Use 'Submit Section' to proceed.");
         return;
       }
       STATE.examState.currentSectionIdx = secIdx;
@@ -512,6 +528,26 @@
       markQuestionVisited(secIdx, 0);
       saveSessionToStorage();
       renderApp();
+    }
+
+    // Section & Exam Submission
+    function submitCurrentSection() {
+      closeModal();
+      const exam = STATE.examState;
+      const data = STATE.assessmentData;
+      const curIdx = exam.currentSectionIdx;
+      const curSec = data.sections[curIdx];
+
+      if (curIdx < data.sections.length - 1) {
+        exam.currentSectionIdx++;
+        exam.currentQuestionIdx = 0;
+        markQuestionVisited(exam.currentSectionIdx, 0);
+        saveSessionToStorage();
+        renderApp();
+        showToastNotification(`Submitted "${curSec.name}". Now starting "${data.sections[exam.currentSectionIdx].name}".`, 'success');
+      } else {
+        submitExam();
+      }
     }
 
     // Scoring & Analytics
@@ -725,6 +761,9 @@
       const infCount = getTotalQuestionCount(PRESETS.infosys);
       const cogCount = getTotalQuestionCount(PRESETS.cognizant);
 
+      const activePresetKey = (STATE.selectedPresetKey && STATE.selectedPresetKey !== 'custom') ? STATE.selectedPresetKey : 'tcs';
+      const activePresetLabel = activePresetKey === 'infosys' ? 'Infosys' : (activePresetKey === 'cognizant' ? 'Cognizant' : 'TCS');
+
       return `
         <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col justify-between">
           
@@ -739,6 +778,13 @@
                 <p class="text-[11px] text-slate-500">Corporate Mock Test Simulator</p>
               </div>
             </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="downloadCompanyPresetJson('${activePresetKey}')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold px-3 py-1.5 rounded border border-slate-300 transition flex items-center gap-1.5 shadow-sm">
+                <i data-lucide="download" class="w-3.5 h-3.5 text-blue-700"></i>
+                <span class="hidden sm:inline">Download</span> <span>${activePresetLabel} JSON</span>
+              </button>
+            </div>
           </header>
 
           <!-- Main Content Area -->
@@ -751,23 +797,50 @@
               <div class="lg:col-span-7 space-y-4">
                 
                 <div class="bg-white border border-slate-200 rounded p-5 shadow-sm space-y-3">
-                  <h2 class="font-bold text-xs text-slate-600 uppercase tracking-wider">Select Assessment Pattern</h2>
+                  <div class="flex items-center justify-between">
+                    <h2 class="font-bold text-xs text-slate-600 uppercase tracking-wider">Select Assessment Pattern</h2>
+                    <span class="text-[11px] text-slate-400">Click card to switch • Click <i data-lucide="download" class="w-3 h-3 inline text-blue-700"></i> to get JSON</span>
+                  </div>
                   
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <button onclick="loadPreset('tcs'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'tcs' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
-                      <span class="font-bold text-xs text-slate-900">TCS iON Pattern</span>
-                      <span class="text-[11px] text-slate-500">${tcsCount} Questions • 75 Mins</span>
-                    </button>
+                    <div onclick="loadPreset('tcs'); renderApp();" class="p-3 rounded border text-left cursor-pointer transition flex flex-col justify-between gap-2 ${STATE.selectedPresetKey === 'tcs' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                      <div class="flex items-start justify-between gap-1">
+                        <div>
+                          <span class="font-bold text-xs text-slate-900 block">TCS iON</span>
+                          <span class="text-[10px] text-slate-500">${tcsCount} Qs • 75 M</span>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); downloadCompanyPresetJson('tcs');" title="Download TCS JSON Schema" class="text-slate-400 hover:text-blue-700 p-1 rounded hover:bg-white transition border border-transparent hover:border-blue-200">
+                          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                      <span class="text-[10px] font-semibold text-blue-700">Sectional Timing</span>
+                    </div>
 
-                    <button onclick="loadPreset('infosys'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'infosys' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
-                      <span class="font-bold text-xs text-slate-900">Infosys Pattern</span>
-                      <span class="text-[11px] text-slate-500">${infCount} Questions • 100 Mins</span>
-                    </button>
+                    <div onclick="loadPreset('infosys'); renderApp();" class="p-3 rounded border text-left cursor-pointer transition flex flex-col justify-between gap-2 ${STATE.selectedPresetKey === 'infosys' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                      <div class="flex items-start justify-between gap-1">
+                        <div>
+                          <span class="font-bold text-xs text-slate-900 block">Infosys</span>
+                          <span class="text-[10px] text-slate-500">${infCount} Qs • 100 M</span>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); downloadCompanyPresetJson('infosys');" title="Download Infosys JSON Schema" class="text-slate-400 hover:text-blue-700 p-1 rounded hover:bg-white transition border border-transparent hover:border-blue-200">
+                          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                      <span class="text-[10px] font-semibold text-blue-700">5 Strict Sections</span>
+                    </div>
 
-                    <button onclick="loadPreset('cognizant'); renderApp();" class="p-3 rounded border text-left transition flex flex-col gap-1 ${STATE.selectedPresetKey === 'cognizant' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
-                      <span class="font-bold text-xs text-slate-900">Cognizant Pattern</span>
-                      <span class="text-[11px] text-slate-500">${cogCount} Questions • 85 Mins</span>
-                    </button>
+                    <div onclick="loadPreset('cognizant'); renderApp();" class="p-3 rounded border text-left cursor-pointer transition flex flex-col justify-between gap-2 ${STATE.selectedPresetKey === 'cognizant' ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+                      <div class="flex items-start justify-between gap-1">
+                        <div>
+                          <span class="font-bold text-xs text-slate-900 block">Cognizant</span>
+                          <span class="text-[10px] text-slate-500">${cogCount} Qs • 85 M</span>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); downloadCompanyPresetJson('cognizant');" title="Download Cognizant JSON Schema" class="text-slate-400 hover:text-blue-700 p-1 rounded hover:bg-white transition border border-transparent hover:border-blue-200">
+                          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </button>
+                      </div>
+                      <span class="text-[10px] font-semibold text-blue-700">AMCAT Pattern</span>
+                    </div>
                   </div>
 
                   <!-- Custom Upload Box with Active State -->
@@ -872,7 +945,10 @@
                     <h3 class="font-bold text-xs text-slate-900">Download Preset</h3>
                   </div>
                   <p class="text-[11px] text-slate-600 leading-relaxed">
-                    Click <strong>"Download Demo JSON"</strong> in the top header to get the authentic pattern structure (TCS, Infosys, or Cognizant).
+                    Download authentic schema structure: 
+                    <a href="javascript:void(0)" onclick="downloadCompanyPresetJson('tcs')" class="font-bold text-blue-700 hover:underline">TCS</a>, 
+                    <a href="javascript:void(0)" onclick="downloadCompanyPresetJson('infosys')" class="font-bold text-blue-700 hover:underline">Infosys</a>, or 
+                    <a href="javascript:void(0)" onclick="downloadCompanyPresetJson('cognizant')" class="font-bold text-blue-700 hover:underline">Cognizant</a>.
                   </p>
                 </div>
 
@@ -912,20 +988,30 @@
               </div>
 
               <!-- Quick Action Bar -->
-              <div class="bg-blue-50 border border-blue-200 rounded p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div class="bg-blue-50 border border-blue-200 rounded p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div class="flex items-center gap-2 text-blue-900">
-                  <i data-lucide="sparkles" class="w-4 h-4 text-blue-700"></i>
-                  <span>Ready to create a custom practice test? Grab the prompt and get started in seconds.</span>
+                  <i data-lucide="sparkles" class="w-4 h-4 text-blue-700 shrink-0"></i>
+                  <span>Ready to create a custom practice test? Copy the AI prompt & download company templates below:</span>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                   <button onclick="openModal('AI_PROMPT')" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold px-3 py-1.5 rounded transition shadow-sm flex items-center gap-1">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     <span>Copy AI Prompt</span>
                   </button>
-                  <button onclick="downloadCompanyPresetJson('tcs')" class="bg-white hover:bg-slate-50 border border-blue-300 text-blue-800 font-semibold px-3 py-1.5 rounded transition shadow-sm flex items-center gap-1">
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>Get TCS Schema</span>
+
+                  <button onclick="downloadCompanyPresetJson('${activePresetKey}')" class="bg-white hover:bg-slate-50 border border-blue-400 text-blue-900 font-bold px-3 py-1.5 rounded transition shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-blue-700"></i>
+                    <span>Get ${activePresetLabel} Schema</span>
                   </button>
+
+                  <div class="flex items-center gap-1 bg-white border border-slate-300 rounded px-1.5 py-1 text-slate-600 shadow-xs">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase mr-0.5">Presets:</span>
+                    <button onclick="downloadCompanyPresetJson('tcs')" class="hover:text-blue-700 font-semibold px-1.5 py-0.5 rounded ${activePresetKey === 'tcs' ? 'bg-blue-100 text-blue-800 font-bold' : ''}" title="Download TCS NQT Schema">TCS</button>
+                    <span class="text-slate-300 text-[10px]">|</span>
+                    <button onclick="downloadCompanyPresetJson('infosys')" class="hover:text-blue-700 font-semibold px-1.5 py-0.5 rounded ${activePresetKey === 'infosys' ? 'bg-blue-100 text-blue-800 font-bold' : ''}" title="Download Infosys Schema">Infosys</button>
+                    <span class="text-slate-300 text-[10px]">|</span>
+                    <button onclick="downloadCompanyPresetJson('cognizant')" class="hover:text-blue-700 font-semibold px-1.5 py-0.5 rounded ${activePresetKey === 'cognizant' ? 'bg-blue-100 text-blue-800 font-bold' : ''}" title="Download Cognizant AMCAT Schema">Cognizant</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -990,7 +1076,8 @@
                 <li>Total duration: <strong>${data.totalTimeMinutes} minutes</strong>.</li>
                 <li>Total questions: <strong>${totalQ} questions</strong> across ${data.sections.length} sections.</li>
                 <li>Qualifying score: <strong>70%</strong>.</li>
-                <li>${data.sectionalTiming ? 'Sectional timing is enabled. Each section must be completed within its allotted duration.' : 'Section switching is enabled.'}</li>
+                <li>${data.sectionalTiming ? 'Sectional timing is enabled.' : 'Flexible section switching is enabled.'}</li>
+                <li><strong>Early Section Submission:</strong> You can submit any section at any time when completed using the <strong>"Submit Section"</strong> button without waiting for the timer to expire.</li>
               </ul>
 
               <!-- Palette -->
@@ -1067,17 +1154,17 @@
             </div>
 
             <!-- Header Tools -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5">
               ${data.allowCalculator ? `
                 <button onclick="openModal('CALCULATOR')" class="text-xs bg-blue-700 hover:bg-blue-600 border border-blue-600 px-2.5 py-1 rounded flex items-center gap-1 text-white transition">
                   <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
-                  <span>Calculator</span>
+                  <span class="hidden sm:inline">Calculator</span>
                 </button>
               ` : ''}
 
               <button onclick="openModal('INSTRUCTIONS')" class="text-xs bg-blue-700 hover:bg-blue-600 border border-blue-600 px-2.5 py-1 rounded flex items-center gap-1 text-white transition">
                 <i data-lucide="info" class="w-3.5 h-3.5"></i>
-                <span>Instructions</span>
+                <span class="hidden sm:inline">Instructions</span>
               </button>
 
               <!-- Timer Display -->
@@ -1090,14 +1177,21 @@
                 </div>
               </div>
 
+              ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? `
+                <button onclick="openModal('SUBMIT_SECTION_CONFIRM')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-2.5 py-1.5 rounded shadow transition flex items-center gap-1" title="Submit current section early">
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-blue-200"></i>
+                  <span>Submit Section</span>
+                </button>
+              ` : ''}
+
               <button onclick="openModal('SUBMIT_CONFIRM')" class="bg-red-700 hover:bg-red-800 text-white font-bold text-xs px-3 py-1.5 rounded shadow transition flex items-center gap-1">
-                <span>Submit</span>
+                <span>Submit Exam</span>
               </button>
             </div>
           </header>
 
           <!-- Section Tabs -->
-          <div class="bg-white border-b border-slate-300 px-4 py-1.5 flex items-center justify-between shadow-sm overflow-x-auto">
+          <div class="bg-white border-b border-slate-300 px-4 py-1.5 flex items-center justify-between shadow-sm overflow-x-auto gap-3">
             <div class="flex items-center gap-1.5">
               <span class="text-xs font-bold text-slate-500 mr-1 hidden sm:inline">Sections:</span>
               ${data.sections.map((sec, idx) => {
@@ -1124,8 +1218,17 @@
       }).join('')}
             </div>
 
-            <div class="text-xs text-slate-600 font-medium hidden md:block">
-              Candidate: <strong class="text-slate-900">${STATE.candidate.name}</strong> (${STATE.candidate.regNo})
+            <div class="flex items-center gap-3 shrink-0">
+              ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? `
+                <button onclick="openModal('SUBMIT_SECTION_CONFIRM')" class="text-xs font-semibold px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:border-blue-300 flex items-center gap-1.5 transition shadow-xs">
+                  <span>Submit Section</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+              ` : ''}
+
+              <div class="text-xs text-slate-600 font-medium hidden md:block">
+                Candidate: <strong class="text-slate-900">${STATE.candidate.name}</strong> (${STATE.candidate.regNo})
+              </div>
             </div>
           </div>
 
@@ -1208,6 +1311,18 @@
                   <button onclick="saveAndNext()" class="px-4 py-1.5 rounded text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white transition">
                     Save & Next
                   </button>
+
+                  ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? `
+                    <button onclick="openModal('SUBMIT_SECTION_CONFIRM')" class="px-3.5 py-1.5 rounded text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white transition flex items-center gap-1 shadow-xs">
+                      <span>Submit Section</span>
+                      <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : `
+                    <button onclick="openModal('SUBMIT_CONFIRM')" class="px-3.5 py-1.5 rounded text-xs font-bold bg-red-700 hover:bg-red-800 text-white transition flex items-center gap-1 shadow-xs">
+                      <span>Submit Exam</span>
+                      <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </button>
+                  `}
                 </div>
               </div>
 
@@ -1267,10 +1382,16 @@
                   </div>
                 </div>
 
-                <div class="p-2 bg-slate-50 border-t border-slate-200 text-[10px] text-slate-500 flex justify-between">
-                  <span>🟢 Answered</span>
-                  <span>🔴 Skipped</span>
-                  <span>🟣 Review</span>
+                <div class="p-2.5 bg-slate-50 border-t border-slate-200 space-y-2">
+                  <div class="text-[10px] text-slate-500 flex justify-between">
+                    <span>🟢 Answered</span>
+                    <span>🔴 Skipped</span>
+                    <span>🟣 Review</span>
+                  </div>
+                  <button onclick="openModal('${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? 'SUBMIT_SECTION_CONFIRM' : 'SUBMIT_CONFIRM'}')" class="w-full py-1.5 rounded text-xs font-bold ${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? 'bg-blue-700 hover:bg-blue-800 text-white' : 'bg-red-700 hover:bg-red-800 text-white'} shadow-xs transition flex items-center justify-center gap-1.5">
+                    <i data-lucide="${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? 'arrow-right-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
+                    <span>${data.sections.length > 1 && STATE.examState.currentSectionIdx < data.sections.length - 1 ? 'Submit Section' : 'Submit Assessment'}</span>
+                  </button>
                 </div>
               </div>
 
@@ -1503,12 +1624,27 @@ I am providing you with an examination JSON structure. Your task is to modify OR
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
               </div>
 
-              <div class="p-4 space-y-2.5 text-xs">
-                <p class="text-slate-600">Copy this prompt into <strong>ChatGPT, Claude, or Gemini</strong> to generate compliant exam JSON files:</p>
-                <textarea id="ai-prompt-area" readonly class="w-full h-56 bg-slate-50 border border-slate-300 rounded p-2.5 font-mono text-xs text-slate-800 select-all">${promptText}</textarea>
-                <div class="flex justify-end pt-1">
-                  <button onclick="navigator.clipboard.writeText(document.getElementById('ai-prompt-area').value); alert('Copied to clipboard.');" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded text-xs transition">
-                    Copy Prompt
+              <div class="p-4 space-y-3 text-xs">
+                <p class="text-slate-600">Copy this prompt into <strong>ChatGPT, Claude, or Gemini</strong> along with one of the company JSON schema templates below:</p>
+                <textarea id="ai-prompt-area" readonly class="w-full h-52 bg-slate-50 border border-slate-300 rounded p-2.5 font-mono text-xs text-slate-800 select-all">${promptText}</textarea>
+                
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                  <div class="flex items-center gap-1.5 text-xs text-slate-700">
+                    <span class="font-bold text-[11px] text-slate-500 uppercase">Download Template:</span>
+                    <button onclick="downloadCompanyPresetJson('tcs')" class="px-2 py-1 bg-slate-50 hover:bg-blue-50 text-blue-900 border border-slate-300 hover:border-blue-300 rounded text-xs font-semibold flex items-center gap-1 transition shadow-xs">
+                      <i data-lucide="download" class="w-3 h-3 text-blue-700"></i> TCS
+                    </button>
+                    <button onclick="downloadCompanyPresetJson('infosys')" class="px-2 py-1 bg-slate-50 hover:bg-blue-50 text-blue-900 border border-slate-300 hover:border-blue-300 rounded text-xs font-semibold flex items-center gap-1 transition shadow-xs">
+                      <i data-lucide="download" class="w-3 h-3 text-blue-700"></i> Infosys
+                    </button>
+                    <button onclick="downloadCompanyPresetJson('cognizant')" class="px-2 py-1 bg-slate-50 hover:bg-blue-50 text-blue-900 border border-slate-300 hover:border-blue-300 rounded text-xs font-semibold flex items-center gap-1 transition shadow-xs">
+                      <i data-lucide="download" class="w-3 h-3 text-blue-700"></i> Cognizant
+                    </button>
+                  </div>
+
+                  <button onclick="navigator.clipboard.writeText(document.getElementById('ai-prompt-area').value); showToastNotification('AI Prompt copied to clipboard!', 'success');" class="px-3.5 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded text-xs transition flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy Prompt</span>
                   </button>
                 </div>
               </div>
@@ -1566,12 +1702,104 @@ I am providing you with an examination JSON structure. Your task is to modify OR
               </div>
               <div class="p-4 space-y-2 text-xs leading-relaxed text-slate-700">
                 <p>1. <strong>Save & Next:</strong> Saves response and moves forward.</p>
-                <p>2. <strong>Clear Response:</strong> Clears selection.</p>
-                <p>3. <strong>Mark for Review:</strong> Flags for later review.</p>
-                <p>4. <strong>Passing Score:</strong> 70% required to qualify.</p>
+                <p>2. <strong>Clear Response:</strong> Clears current selection.</p>
+                <p>3. <strong>Mark for Review:</strong> Flags question for later review.</p>
+                <p>4. <strong>Submit Section:</strong> You can submit the current section at any time once completed without waiting for the timer to expire.</p>
+                <p>5. <strong>Passing Score:</strong> 70% required to qualify.</p>
               </div>
               <div class="p-2.5 bg-slate-50 border-t border-slate-200 text-right">
                 <button onclick="closeModal()" class="px-3 py-1 bg-slate-800 text-white text-xs font-bold rounded">Close</button>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (STATE.activeModal === 'SUBMIT_SECTION_CONFIRM') {
+        const curSec = STATE.assessmentData.sections[STATE.examState.currentSectionIdx];
+        const isLastSec = STATE.examState.currentSectionIdx >= STATE.assessmentData.sections.length - 1;
+        const nextSec = !isLastSec ? STATE.assessmentData.sections[STATE.examState.currentSectionIdx + 1] : null;
+
+        let secAnswered = 0;
+        let secNotAnswered = 0;
+        let secNotVisited = 0;
+        let secMarked = 0;
+
+        curSec.questions.forEach(q => {
+          const st = STATE.examState.statuses[q.id] || 'NOT_VISITED';
+          if (st === 'ANSWERED' || st === 'MARKED_ANSWERED') secAnswered++;
+          else if (st === 'MARKED') secMarked++;
+          else if (st === 'NOT_ANSWERED') secNotAnswered++;
+          else secNotVisited++;
+        });
+
+        modalRoot.innerHTML = `
+          <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden text-slate-800 border border-slate-300">
+              <div class="bg-blue-800 text-white px-4 py-2.5 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="check-square" class="w-4 h-4 text-blue-200"></i>
+                  <span class="font-bold text-xs uppercase tracking-wide">Submit Section Confirmation</span>
+                </div>
+                <button onclick="closeModal()" class="text-blue-200 hover:text-white transition">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <div class="p-5 space-y-4 text-xs">
+                <div>
+                  <p class="text-slate-700 font-medium leading-relaxed">
+                    ${isLastSec 
+                      ? `You are on the final section (<strong>${curSec.name}</strong>). Submitting this section will finish and calculate your overall assessment score.`
+                      : `Are you sure you want to submit section <strong>${curSec.name}</strong> early and move to <strong class="text-blue-700">${nextSec.name}</strong>?`
+                    }
+                  </p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded p-3 space-y-2">
+                  <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex justify-between">
+                    <span>${curSec.name} Stats</span>
+                    <span class="text-slate-700">${secAnswered}/${curSec.questions.length} Attempted</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded border border-slate-200">
+                      <span class="text-slate-600">Total Questions:</span>
+                      <span class="font-bold text-slate-900">${curSec.questions.length}</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-emerald-50/70 px-2.5 py-1.5 rounded border border-emerald-200">
+                      <span class="text-emerald-700 font-medium">Answered:</span>
+                      <span class="font-bold text-emerald-800">${secAnswered}</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-red-50/70 px-2.5 py-1.5 rounded border border-red-200">
+                      <span class="text-red-700 font-medium">Unanswered:</span>
+                      <span class="font-bold text-red-800">${secNotAnswered + secNotVisited}</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-purple-50/70 px-2.5 py-1.5 rounded border border-purple-200">
+                      <span class="text-purple-700 font-medium">Marked for Review:</span>
+                      <span class="font-bold text-purple-800">${secMarked}</span>
+                    </div>
+                  </div>
+                </div>
+
+                ${STATE.assessmentData.sectionalTiming ? `
+                  <div class="bg-amber-50 border border-amber-300 rounded p-2.5 flex items-start gap-2 text-[11px] text-amber-900">
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                    <span><strong>Section Lock:</strong> Once submitted, you cannot revisit this section or alter its answers.</span>
+                  </div>
+                ` : `
+                  <div class="bg-blue-50 border border-blue-200 rounded p-2.5 flex items-start gap-2 text-[11px] text-blue-900">
+                    <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></i>
+                    <span>You will immediately proceed to the next section without waiting.</span>
+                  </div>
+                `}
+              </div>
+
+              <div class="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button onclick="closeModal()" class="px-3.5 py-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs rounded transition shadow-xs">
+                  Cancel & Review
+                </button>
+                <button onclick="submitCurrentSection()" class="px-4 py-1.5 ${isLastSec ? 'bg-red-700 hover:bg-red-800' : 'bg-blue-700 hover:bg-blue-800'} text-white font-bold text-xs rounded transition shadow-xs flex items-center gap-1.5">
+                  <span>${isLastSec ? 'Submit Assessment' : 'Submit & Next Section'}</span>
+                  <i data-lucide="${isLastSec ? 'check' : 'arrow-right'}" class="w-3.5 h-3.5"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -1582,11 +1810,11 @@ I am providing you with an examination JSON structure. Your task is to modify OR
           <div class="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
             <div class="bg-white rounded shadow-xl w-full max-w-sm overflow-hidden text-slate-800 border border-slate-300">
               <div class="bg-red-700 text-white px-4 py-2 font-bold text-xs">
-                Confirm Submission
+                Confirm Assessment Submission
               </div>
 
               <div class="p-4 space-y-3 text-xs">
-                <p class="text-slate-600">Are you sure you want to submit your assessment?</p>
+                <p class="text-slate-600">Are you sure you want to finalize and submit your entire assessment?</p>
                 <div class="bg-slate-50 border border-slate-200 p-2.5 rounded space-y-1">
                   <div class="flex justify-between"><span>Total Questions:</span><strong>${res.totalQuestions}</strong></div>
                   <div class="flex justify-between"><span class="text-emerald-700">Answered:</span><strong>${res.attemptedCount}</strong></div>
